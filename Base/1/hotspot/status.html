@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+	$(if refresh-timeout)
+	<meta http-equiv="refresh" content="$(refresh-timeout-secs); $(link-status)">
+	$(endif)
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <title>STATUS</title>
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" sizes="32x32">
+    <link rel="stylesheet" href="assets/css/style.css">
+	<script language="JavaScript">
+
+		$(if advert-pending == 'yes')
+			var popup = '';
+			function focusAdvert() {
+				if (window.focus) popup.focus();
+				}
+			function openAdvert() {
+				popup = open('$(link-advert)', 'hotspot_advert', '');
+				setTimeout("focusAdvert()", 200);
+				}
+			$(endif)
+			function openLogout() {
+				if (window.name != 'hotspot_status') return true;
+				open('$(link-logout)', 'hotspot_logout', 'toolbar=0,location=0,directories=0,status=0,menubars=0,resizable=1,width=280,height=250');
+				window.close();
+				return false;
+				}
+
+	</script>
+    
+</head>
+
+<body>
+
+    <!-- App Header -->
+    <div class="appHeader">
+        <div class="left">
+            <a href="javascript:;" class="headerButton" data-bs-toggle="modal" data-bs-target="#Logout">
+				<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="36" height="36" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+				</svg>
+            </a>
+        </div>
+        <div class="pageTitle">
+            Status
+        </div>
+        <div class="right">
+            <a href="#" class="headerButton" data-bs-toggle="modal" data-bs-target="#Notif">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M10 21H14C14 22.1 13.1 23 12 23S10 22.1 10 21M21 19V20H3V19L5 17V11C5 7.9 7 5.2 10 4.3V4C10 2.9 10.9 2 12 2S14 2.9 14 4V4.3C17 5.2 19 7.9 19 11V17L21 19M17 11C17 8.2 14.8 6 12 6S7 8.2 7 11V18H17V11Z" />
+				</svg>
+                <span class="badge badge-danger">1</span>
+            </a>
+        </div>
+    </div>
+    <!-- * App Header -->
+	
+    <!-- Logout -->
+    <div class="modal fade dialogbox" id="Logout" data-bs-backdrop="static" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Déconnections</h5>
+                </div>
+                <div class="modal-body">
+                    Vous êtes sûr?
+                </div>
+                <form action="$(link-logout)" class="modal-footer" name="logout" onSubmit="return openLogout()">
+					<input type="hidden" name="erase-cookie" value="on"/>
+                    <div class="btn-inline">
+                        <a href="#" class="btn btn-text-primary" data-bs-dismiss="modal">ANNULÉ</a>
+                        $(if login-by-mac != 'yes')<button type="submit" class="btn btn-text-danger">Déconnections</button>$(endif)
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- * Logout -->
+	
+	<!-- Notifikasi -->
+        <div class="modal fade dialogbox" id="Notif" data-bs-backdrop="static" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-icon">
+						<div class="avatar-section">
+							<a href="#">
+								<img src="assets/img/favicon.png" alt="avatar" class="imaged w100 rounded">
+								<span class="button btn-success">
+									<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+									<path fill="#ffffff" d="M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z" />
+									</svg>
+								</span>
+							</a>
+						</div>
+                    </div>
+                    <div class="modal-header">
+                        <h5 class="modal-title"><script src="assets/config/namawifi.js"></script></h5>
+                    </div>
+                    <div class="modal-body">
+                        <script src="assets/config/informasi.js"></script>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="btn-inline">
+                            <a href="#" class="btn btn-text-primary" data-bs-dismiss="modal">FERMÉ</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- * Notifikasi -->
+    
+
+    <!-- App Capsule -->
+    <div id="appCapsule">
+
+        <div class="section mt-3 text-center">
+            <div class="avatar-section">
+                <a href="#">
+                    <img src="assets/img/favicon.png" alt="avatar" class="imaged w100 rounded">
+                    <span class="button btn-success">
+						<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+						<path fill="#ffffff" d="M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z" />
+						</svg>
+                    </span>
+                </a>
+            </div>
+        </div>
+
+        <div class="listview-title mt-1">Arrangement</div>
+        <ul class="listview image-listview text inset">
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Mode Nuit
+                        </div>
+                        <div class="form-check form-switch  ms-2">
+                            <input class="form-check-input dark-mode-switch" type="checkbox" id="darkmodeSwitch">
+                            <label class="form-check-label" for="darkmodeSwitch"></label>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <div class="listview-title mt-1">Compte</div>
+        <ul class="listview image-listview text inset">
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Utilisateur
+                        </div>
+                        <div>
+                            $(if login-by == 'trial') Mode Gratuis $(elif login-by != 'mac') $(username) $(endif)
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            IP
+                        </div>
+                        <div>
+                            $(ip)
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            MAC
+                        </div>
+                        <div>
+                            $(mac)
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <div class="listview-title mt-1">Utiliser</div>
+        <ul class="listview image-listview text inset">
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Upload
+                        </div>
+                        <div>
+                            $(bytes-in-nice)
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Download
+                        </div>
+                        <div>
+                            $(bytes-out-nice)
+                        </div>
+                    </div>
+                </div>
+            </li>
+			<li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Quota restant
+                        </div>
+                        <div>
+                            $(if remain-bytes-total) $(remain-bytes-total-nice) $(else)Loss Unlimited $(endif)
+                        </div>
+                    </div>
+                </div>
+            </li>
+			<li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            Connecter
+                        </div>
+                        <div id="TerKoneksi" data-secs="$(uptime-secs)">
+                            $(uptime)
+                        </div>
+                    </div>
+                </div>
+            </li>
+			$(if session-time-left)
+			<li>
+                <div class="item">
+                    <div class="in">
+                        <div>
+                            restant
+                        </div>
+                        <div id="SisaWaktu" data-secs="$(session-time-left-secs)">
+                            $(session-time-left)
+                        </div>
+                    </div>
+                </div>
+            </li>
+			$(endif)
+            <li>
+    <div class="item">
+        <div class="in">
+            <div>
+                Expiration prévue
+            </div>
+            <div id="dateExpiration">
+                ...
+            </div>
+        </div>
+    </div>
+</li>
+
+<script>
+    // On récupère le temps restant en secondes à partir de MikroTik
+    const timeLeftSecs = parseInt("$(session-time-left-secs)");
+
+    if (!isNaN(timeLeftSecs)) {
+        const now = new Date(); // Date actuelle
+        const expiration = new Date(now.getTime() + timeLeftSecs * 1000);
+
+        const options = {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+
+        const expirationStr = expiration.toLocaleDateString('fr-FR', options).replace(",", " à");
+        document.getElementById("dateExpiration").innerText = expirationStr;
+    } else {
+        document.getElementById("dateExpiration").innerText = "Illimité ou non défini";
+    }
+</script>
+
+        </ul>
+        
+        
+
+        <div class="listview-title mt-1">Autre</div>
+        <!--  Produk Paket -->
+        <ul>
+        
+            <li><a href="jwifi.bj/status">
+                    <h4>CLIQUEZ OU APUIS LONG POUS COPIER LE LIENS AVANS DE VOUS CONNECTER
+                </a></li>
+            <li><a href="https://v5.voiranime.com/">
+                    <h4>MANGAS OU ANIMÉS
+                </a></li>
+            <li><a href="https://french-stream.es/">
+                    <h4>FILMS ET SÉRIES
+                </a></li>
+            <li><a href="https://voirdrama.org/">
+                    <h4>FILMS ET FEUILLETONS CORÉENS
+                </a></li>
+            <li><a href="https://n2.french-manga.net/">
+                    <h4>MANGAS
+                </a></li>
+            <li><a href="https://anime-sama.fr/">
+                    <h4>MANGAS & SCANS
+                </a></li>
+            <li><a href="https://brave.com/download/">
+                    <h4>TÉLÉCHARGEZ BRAVE ICI POUR ÉVITER LES PUBS
+                </a></li>
+        </ul>
+        <!-- * Produk Paket -->
+        </div>
+        <ul class="listview image-listview text mb-2 inset">
+            <li>
+                <a href="masaaktif.html" class="item">
+                    <div class="in">
+                        <div>Période active</div>
+                        <span class="text-primary">vérifier</span>
+                    </div>
+					<div>
+						<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="36" height="36" viewBox="0 0 24 24">
+						<path fill="#A9ABAD" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+						</svg>
+					</div>
+                </a>
+            </li>
+            <li>
+                <a href="pembayaran.html" class="item">
+                    <div class="in">
+                        <div>
+                            Paiement
+						</div>
+						<div>
+							<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="36" height="36" viewBox="0 0 24 24">
+							<path fill="#A9ABAD" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+							</svg>
+						</div>
+					</div>
+                </a>
+            </li>
+            <li>
+                <a href="javascript:;" class="item" data-bs-toggle="modal" data-bs-target="#Logout">
+                    <div class="in">
+                        <div>
+							Déconnecté
+						</div>
+						<div>
+							<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="36" height="36" viewBox="0 0 24 24">
+							<path fill="#A9ABAD" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+							</svg>
+						</div>
+					</div>
+                </a>
+            </li>
+        </ul>
+        </li>
+            <li>
+                <a href="pembayaran.html" class="item">
+                    <div class="in">
+                        <div>
+                            Paiement
+						</div>
+						<div>
+							<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="36" height="36" viewBox="0 0 24 24">
+							<path fill="#A9ABAD" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+							</svg>
+						</div>
+					</div>
+                </a>
+            </li>
+            <li>
+
+    </div>
+    
+    <!-- * App Capsule -->
+
+
+    <!-- App Bottom Menu -->
+    <div class="appBottomMenu">
+        <a href="$(link-status)" class="item active">
+            <div class="col">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M17 14H19V17H22V19H19V22H17V19H14V17H17V14M5 20V12H2L12 3L22 12H17V10.19L12 5.69L7 10.19V18H12C12 18.7 12.12 19.37 12.34 20H5Z" />
+				</svg>
+				<strong>Status</strong>
+            </div>
+        </a>
+		<a href="javascript:;" class="item" data-bs-toggle="modal" data-bs-target="#Logout">
+            <div class="col">
+                <div class="action-button large">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				   <path fill="#ffffff" d="M16.56,5.44L15.11,6.89C16.84,7.94 18,9.83 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12C6,9.83 7.16,7.94 8.88,6.88L7.44,5.44C5.36,6.88 4,9.28 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12C20,9.28 18.64,6.88 16.56,5.44M13,3H11V13H13" />
+				</svg>
+                </div>
+            </div>
+        </a>
+        <a href="bantuan.html" class="item">
+            <div class="col">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M13,8A4,4 0 0,1 9,12A4,4 0 0,1 5,8A4,4 0 0,1 9,4A4,4 0 0,1 13,8M17,18V20H1V18C1,15.79 4.58,14 9,14C13.42,14 17,15.79 17,18M20.5,14.5V16H19V14.5H20.5M18.5,9.5H17V9A3,3 0 0,1 20,6A3,3 0 0,1 23,9C23,9.97 22.5,10.88 21.71,11.41L21.41,11.6C20.84,12 20.5,12.61 20.5,13.3V13.5H19V13.3C19,12.11 19.6,11 20.59,10.35L20.88,10.16C21.27,9.9 21.5,9.47 21.5,9A1.5,1.5 0 0,0 20,7.5A1.5,1.5 0 0,0 18.5,9V9.5Z" />
+				</svg>	
+				<strong>Aide</strong>
+            </div>
+        </a>
+    </div>
+    
+    <!-- * App Bottom Menu -->
+
+    
+
+	<!-- START Live Status by afarhansib.github.io -->
+	<script src="assets/js/live-status.js"></script>
+	<script>
+	var time = "$(session-time-left)";
+	time = time.replace(/w/g,'w ').replace(/d/g,'Jr ').replace(/h/g,'h ').replace(/m/g,'m ').replace(/s/g,'s ');
+	waktu = time.replace(/w /g,'semaine').replace(/d /g,'Jour').replace(/h /g,'Heure').replace(/m /g,'Minutes').replace(/s /g,'Secondes');
+	sisawaktu = waktu.replace(/semaine/g,' Semaine ').replace(/Jour/g,' Jr ').replace(/Heure/g,' H ').replace(/Minutes/g,' m ').replace(/Secondes/g,' s ');
+	document.getElementById("SisaWaktu").innerHTML = sisawaktu; 
+	</script>
+	<script>
+	var kon = "$(uptime)";
+	kon = kon.replace(/w/g,'w ').replace(/d/g,'Jr ').replace(/h/g,'hr ').replace(/m/g,'m ').replace(/s/g,'s ');
+	koneksi = kon.replace(/w /g,'semaine').replace(/d /g,'Jours').replace(/h /g,'Heures').replace(/m /g,'Minutes').replace(/s /g,'secondes');
+	terkon = koneksi.replace(/semaine/g,' w ').replace(/Jours/g,' jr ').replace(/Heures/g,' H ').replace(/Minutes/g,' m ').replace(/secondes/g,' s ');
+	document.getElementById("TerKoneksi").innerHTML = terkon; 
+	</script>
+	<!-- END Live Status by afarhansib.github.io -->	
+
+    <!-- ========= JS Files =========  -->
+    <!-- Bootstrap -->
+    <script src="assets/js/lib/bootstrap.bundle.min.js"></script>
+    <!-- Base Js File -->
+    <script src="assets/js/base.js"></script>
+
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function () {
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/64e6136f94cf5d49dc6c140e/1h8hbnr2a';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
+    </script>
+    <!--End of Tawk.to Script-->
+
+</body>
+
+</html>

@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <title>SE CONNECTER</title>
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" sizes="38x33">
+    <link rel="stylesheet" href="assets/css/style.css">
+	<script>
+    //redirect user EXPIRED
+    var error  = "$(error)";
+    if(error == " Utilisateur $(username) a atteint le délai"){
+	window.location.href = "./isolir.html";
+    } else if(error == " Utilisateur $(username) a atteint la limite de circulation"){
+	window.location.href = "./isolir-kuota.html";
+	}
+	</script>
+</head>
+
+<body>
+	$(if chap-id)
+	<form name="sendin" action="$(link-login-only)" method="post">
+		<input type="hidden" name="username" />
+		<input type="hidden" name="password" />
+		<input type="hidden" name="dst" value="$(link-orig)" />
+		<input type="hidden" name="popup" value="true" />
+	</form>	
+	
+	<script type="text/javascript" src="/md5.js"></script>
+	<script type="text/javascript">
+		function doLogin() {
+			document.sendin.username.value = document.login.username.value;
+			document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value +
+			'$(chap-challenge)');
+			document.sendin.submit();
+			return false;
+		}
+	</script>
+	$(endif)
+
+<!-- 🌐 App Header avec Switch Visible -->
+<div class="appHeader bg-primary text-light d-flex align-items-center justify-content-between px-3 py-2" style="box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+
+    <!-- 🔄 Switch Mode -->
+    <div class="left"><div class="headerButton">
+        <div class="form-check form-switch">
+            <input class="form-check-input dark-mode-switch" type="checkbox" id="darkmodeSwitch">
+            <label class="form-check-label" for="darkmodeSwitch"></label>
+        </div>
+    </div></div>
+  
+    <!-- 🖼️ Logo & nom -->
+    <div class="pageTitle text-center flex-grow-1">
+      <im5g src="assets/img/logo-icon.png" alt="logo" class="logo" style="height: 32px;">
+      <div><script src="assets/config/namawifi.js"></script></div>
+    </div>
+  
+    <!-- 🔔 Notifications -->
+    <div class="position-relative">
+      <a href="#" class="headerButton" data-bs-toggle="modal" data-bs-target="#Notif">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+          <path fill="#ffffff" d="M10 21H14C14 22.1 13.1 23 12 23S10 22.1 10 21M21 19V20H3V19L5 17V11C5 7.9 7 5.2 10 4.3V4C10 2.9 10.9 2 12 2S14 2.9 14 4V4.3C17 5.2 19 7.9 19 11V17L21 19Z"/>
+        </svg>
+        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-circle" style="font-size: 10px;">1</span>
+      </a>
+    </div>
+  </div>
+  
+	<!-- Notifikasi -->
+        <div class="modal fade dialogbox" id="Notif" data-bs-backdrop="static" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-icon">
+						<div class="avatar-section">
+							<a href="#">
+								<img src="assets/img/favicon.png" alt="avatar" class="imaged w100 rounded">
+								<span class="button btn-success">
+									<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+									<path fill="#ffffff" d="M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z" />
+									</svg>
+								</span>
+							</a>
+						</div>
+                    </div>
+                    <div class="modal-header">
+                        <h5 class="modal-title"><script src="assets/config/namawifi.js"></script></h5>
+                    </div>
+                    <div class="modal-body">
+                        <script src="assets/config/informasi.js"></script>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="btn-inline">
+                            <a href="#" class="btn btn-text-primary" data-bs-dismiss="modal">FERMÉ</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- * Notifikasi -->
+         <div class="section mt-2 text-center">
+        
+        </div>
+              <!-- Bannière défilante -->
+<div class="alert-scroller">
+    <div class="alert-message">
+        📢 <strong>Nouveaux Ticket :</strong>🔥 1MOIS 🔥<strong> a 3.000F,</strong>et 30heures 300F <strong>Avec Nous restez connecté 24H/24  !</strong> !
+    </div>
+</div>
+         <!-- Template Login -->
+         <div class="section mt-2">
+            <div class="wallet-card">
+                <!-- Formulir Login -->
+                            <form name="login" autocomplete="off" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
+                                <div class="form-group basic">
+                                    <div class="input-wrapper">
+                                        <label class="label" for="username"></label>
+											<input type="hidden" name="dst" value="$(link-orig)" required />
+											<input type="hidden" name="popup" value="true" />
+											<input type="text" class="form-control" id="username" name="username" placeholder="Tapez le code ici ou achetez P MOMO" required />
+											<input type="hidden" id="password" name="password" />
+                                        <i class="clear-input">
+                                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+											<path fill="#FFFFFF" d="M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2C6.47,2 2,6.47 2,12C2,17.53 6.47,22 12,22C17.53,22 22,17.53 22,12C22,6.47 17.53,2 12,2M14.59,8L12,10.59L9.41,8L8,9.41L10.59,12L8,14.59L9.41,16L12,13.41L14.59,16L16,14.59L13.41,12L16,9.41L14.59,8Z" />
+											</svg>
+                                        </i>
+                                    </div>
+                                </div>
+                                <div class="form-group basic">
+									<button type="submit" class="btn btn-primary btn-block btn-lg">Se connecter</button>
+									$(if error)<center><span class="text-danger">
+									<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+									<path fill="currentColor" d="M1.46,8.88L2.88,7.46L5,9.59L7.12,7.46L8.54,8.88L6.41,11L8.54,13.12L7.12,14.54L5,12.41L2.88,14.54L1.46,13.12L3.59,11L1.46,8.88M15,4A4,4 0 0,1 19,8A4,4 0 0,1 15,12A4,4 0 0,1 11,8A4,4 0 0,1 15,4M15,5.9A2.1,2.1 0 0,0 12.9,8A2.1,2.1 0 0,0 15,10.1C16.16,10.1 17.1,9.16 17.1,8C17.1,6.84 16.16,5.9 15,5.9M15,13C17.67,13 23,14.33 23,17V20H7V17C7,14.33 12.33,13 15,13M15,14.9C12,14.9 8.9,16.36 8.9,17V18.1H21.1V17C21.1,16.36 17.97,14.9 15,14.9Z" />
+									</svg>
+									$(error)
+									</span></center>$(endif)
+                                </div>
+                            </form>
+                            <!-- Tombol Menu -->
+<!-- Section avec boutons côte à côte et arrondis -->
+<div class="section mt-2 px-3">
+  <div class="d-flex flex-row justify-content-center align-items-stretch gap-2">
+
+    <!-- Bouton Ticket Membre -->
+    <a href="member.html"
+       class="btn btn-primary d-flex align-items-center justify-content-center gap-2 rounded-pill py-3 flex-fill"
+       style="min-width: 0;">
+      <svg width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+        <path d="M10 12C12.21 12 14 10.21 14 8S12.21 4 10 4 6 5.79 6 8 7.79 12 10 12M12 20H2V17C2 14.33 7.33 13 10 13C12.67 13 18 14.33 18 17V20H12Z"/>
+      </svg>
+      <span class="fw-bold">T-Membre</span>
+    </a>
+
+    <!-- Bouton Récupération MoMo -->
+    <a href="https://loginm.maxdospot.com/retrieve-mikhmon-code"
+       class="btn btn-warning d-flex align-items-center justify-content-center gap-2 rounded-pill py-3 flex-fill text-dark"
+       style="min-width: 0;">
+      <img src="assets/img/sample/produk/billetsbg.png" width="24" height="24" alt="MoMo">
+      <span class="fw-bold">R-Code MOMO </span>
+    </a>
+
+  </div>
+</div>
+
+                            
+                <!-- * Formulir Login -->
+                 
+            </div>
+        </div>
+    </div>
+    <div class="wallet-footer"></div>
+</div>
+</div>
+                 
+
+      
+    <div class="section mt-2 text-center">
+        <h3> <b style="color: rgb(0, 89, 255);">
+                </b></p>
+    </div>
+         
+
+<!-- DASHBOARD ADAPTATIF COMPACT -->
+<div class="section full mt-2 px-2">
+  <h3 class="mb-2 text-center" style="color: #5b24b9;">📦 Choisissez votre forfait</h3>
+  <div class="row g-1">
+
+    <!-- 2H - 100F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-warning text-dark position-absolute m-1">Éco</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="2H">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">🔥 2Heures</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=100&currency=cfa&profile_name=100F-2H&timelimit=2h&datalimit=2G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">100F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3H - 150F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg border border-primary">
+        <div class="badge bg-success position-absolute m-1">Eco+</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="3H">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">💥 3Heures</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=150&currency=cfa&profile_name=3H150F&timelimit=3h&datalimit=4G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">150F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6H - 200F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-info text-dark position-absolute m-1">Chap-Chap</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="6H">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">📶 6Heures</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=200&currency=cfa&profile_name=200F-24H&timelimit=24h&datalimit=5G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">200F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 24H - 300F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-primary position-absolute m-1">Super </div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="24H">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">🕛 30Heures</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=300&currency=cfa&profile_name=300F-30H&timelimit=30h&datalimit=10G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">300F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2J - 500F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-secondary position-absolute m-1">3 Jours</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="2J">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">📅 3Jours</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=500&currency=cfa&profile_name=500F-3J&timelimit=3d&datalimit=15G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">500F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7J - 1000F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-dark position-absolute m-1">1 Semaine</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="7J">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">📆 7Jours</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=1000&currency=cfa&profile_name=1000F-7J&timelimit=7d&datalimit=30G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">1000F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30J - 3000F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg">
+        <div class="badge bg-danger position-absolute m-1">1 Télephone</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="30J">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">🗓️ 30Jours 30Gb</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=3000&currency=cfa&profile_name=3000F-30J&timelimit=30d&datalimit=35G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-primary w-100">3000F</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIP - 5000F -->
+    <div class="col-6 col-md-4">
+      <div class="card shadow-sm rounded-lg border border-danger">
+        <div class="badge bg-danger text-white position-absolute m-1">2 Télephone</div>
+        <img src="assets/img/sample/produk/Achat1.png" class="card-img-top rounded-top" alt="VIP">
+        <div class="card-body px-2 py-1 text-center">
+          <h6 class="mb-1 small">👑 30J Ilimité</h6>
+          <p class="mb-1 text-muted" style="font-size: 0.75rem;"></p>
+          <a href="https://loginm.maxdospot.com//buy-mikhmon?nasid=$(server-name)&amount=5000&currency=cfa&profile_name=5000F-30J&timelimit=30d&datalimit=80G&mac=$(mac)&ip=$(ip)&link-status=$(link-status-esc)&pub_key=pk_live_hQuMLplVVqNa_-PBgD311V97" class="btn btn-sm btn-danger w-100">5000F</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="https://loginm.maxdospot.com/retrieve-mikhmon-code" style="
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 12px 20px;
+          background: #ffc107;
+          color: #0044ff;
+          border-radius: 12px;
+          font-weight: bold;
+          font-size: 16px;
+          text-decoration: none;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        ">
+          <img src="assets/img/sample/produk/billet.png" alt="Logo billet" width="28" style="border-radius: 6px;">
+          Récupérer mon code MoMo
+        </a>
+      </div>
+          
+
+  </div>
+</div>
+
+
+   
+    <!-- Carousel -->
+    <div id="appCapsule">
+        <div class="section wallet-card-section full pt-1">
+          <!-- 🚀 SLIDER modernisé -->
+          <div class="carousel-single splide" style="max-width: 100%; padding: 10px;">
+            <div class="splide__track">
+              <ul class="splide__list">
+                <!-- Exemple de slide -->
+                <li class="splide__slide">
+                  <div class="carousel-card">
+                    <a href="bantuan.html">
+                      <img src="assets/img/sample/slide/slide0.png" alt="Slide 1" />
+                    </a>
+                  </div>
+                </li>
+                <!-- Slides suivants -->
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide1.png" alt="Slide 2" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide2.png" alt="Slide 3" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide3.png" alt="Slide 4" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide4.png" alt="Slide 5" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide5.png" alt="Slide 6" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide6.png" alt="Slide 7" /></div></li>
+                <li class="splide__slide"><div class="carousel-card"><img src="assets/img/sample/slide/slide7.png" alt="Slide 8" /></div></li>
+              </ul>
+            </div>
+    <!-- batas atas slide produk -->
+    <div class="carousel-small splide">
+        <div class="splide__track">
+            <ul class="splide__list">
+                <!-- list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk8.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk4.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk7.png" alt="img" class="imaged w-100">
+                
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk5.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk8.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk7.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk3.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk9.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+                <!--  list produk -->
+                <li class="splide__slide">
+                    <a href="#">
+                        <div class="user-card">
+                            <img src="assets/img/sample/produk/produk2.png" alt="img" class="imaged w-100">
+    
+                        </div>
+                    </a>
+                </li>
+                <!-- * batas list produk -->
+            </ul>
+        </div>
+        <!-- * Produk Paket -->
+    </div>
+
+<!-- * batas bawah slide produk -->
+
+        <!-- ⚡️ Informations de paiement -->
+<section class="section full mt-2 mb-1">
+    <blockquote class="blockquote">
+   <!-- Alerte d'information importante -->
+<div class="alert alert-warning">
+    <strong>ℹ️ Information :</strong> Après paiement par MTN, MOOV ou Celtis Cash, vous recevrez un SMS avec un code de référence pour récupérer votre ticket.
+</div>
+    </blockquote>
+
+    
+</section>
+
+<!-- 🎬 Section Films, Séries & Animés -->
+<div style="
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  font-family: 'Inter', sans-serif;
+">
+  <h2 style="color: #2c3e50; font-size: 22px; text-align: center; margin-bottom: 10px;">
+    🎥 Films, Séries & Animés
+  </h2>
+  <p style="text-align: center; font-size: 15px; color: #555;">
+    Utilisez le navigateur <strong>Brave</strong> pour une expérience sans publicité.
+  </p>
+  <ul style="list-style: none; padding: 0; margin-top: 20px;">
+    <li style="margin-bottom: 10px;">
+      <a href="http://jwifi.bj" target="_blank" style="color: #2980b9; text-decoration: none; font-weight: bold;">
+        📌 Cliquez ou appui long pour copier ce lien AVANT de vous connecter
+      </a>
+    </li>
+    <li><a href="https://v5.voiranime.com/" target="_blank" style="color: #34495e;">🍥 Voir des mangas & animés</a></li>
+    <li><a href="https://french-stream.es/" target="_blank" style="color: #34495e;">🎞️ Films & Séries</a></li>
+    <li><a href="https://voirdrama.org/" target="_blank" style="color: #34495e;">🎎 Feuilletons coréens</a></li>
+    <li><a href="https://n2.french-manga.net/" target="_blank" style="color: #34495e;">📚 Mangas</a></li>
+    <li><a href="https://anime-sama.fr/" target="_blank" style="color: #34495e;">📖 Mangas & Scans</a></li>
+    <li><a href="https://brave.com/download/" target="_blank" style="color: #27ae60; font-weight: bold;">🚀 Télécharger Brave ici</a></li>
+  </ul>
+</div>
+
+
+
+        <!-- app footer -->
+        <div class="appFooter">
+            <div class="footer-title">
+                Support by <script src="assets/config/supported.js"></script>
+            </div>
+            © Design by <a href="jwifi.bj"><script src="assets/config/namawifi.js"></script></a>
+        </div>
+        <!-- * app footer -->
+
+    </div>
+    <!-- * App Capsule -->
+
+
+    <!-- Menu Bawah -->
+    <div class="appBottomMenu">
+        <a href="#" class="item active">
+            <div class="col">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M17 14H19V17H22V19H19V22H17V19H14V17H17V14M5 20V12H2L12 3L22 12H17V10.19L12 5.69L7 10.19V18H12C12 18.7 12.12 19.37 12.34 20H5Z" />
+				</svg>
+				<strong>Page d'accueil</strong>
+            </div>
+        </a>
+		<a href="https://laksa19.github.io/myqr/" class="item">
+            <div class="col">
+                <div class="action-button large">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#ffffff" d="M4,4H10V10H4V4M20,4V10H14V4H20M14,15H16V13H14V11H16V13H18V11H20V13H18V15H20V18H18V20H16V18H13V20H11V16H14V15M16,15V18H18V15H16M4,20V14H10V20H4M6,6V8H8V6H6M16,6V8H18V6H16M6,16V18H8V16H6M4,11H6V13H4V11M9,11H13V15H11V13H9V11M11,6H13V10H11V6M2,2V6H0V2A2,2 0 0,1 2,0H6V2H2M22,0A2,2 0 0,1 24,2V6H22V2H18V0H22M2,18V22H6V24H2A2,2 0 0,1 0,22V18H2M22,22V18H24V22A2,2 0 0,1 22,24H18V22H22Z" />
+				</svg>
+                </div>
+            </div>
+        </a>
+        <a href="bantuan.html" class="item">
+            <div class="col">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"  width="24" height="24" viewBox="0 0 24 24">
+				<path fill="#6236FF" d="M13,8A4,4 0 0,1 9,12A4,4 0 0,1 5,8A4,4 0 0,1 9,4A4,4 0 0,1 13,8M17,18V20H1V18C1,15.79 4.58,14 9,14C13.42,14 17,15.79 17,18M20.5,14.5V16H19V14.5H20.5M18.5,9.5H17V9A3,3 0 0,1 20,6A3,3 0 0,1 23,9C23,9.97 22.5,10.88 21.71,11.41L21.41,11.6C20.84,12 20.5,12.61 20.5,13.3V13.5H19V13.3C19,12.11 19.6,11 20.59,10.35L20.88,10.16C21.27,9.9 21.5,9.47 21.5,9A1.5,1.5 0 0,0 20,7.5A1.5,1.5 0 0,0 18.5,9V9.5Z" />
+				</svg>	
+				<strong>Aide</strong>
+            </div>
+        </a>
+    </div>
+    <!-- * Menu Bawah -->
+
+	<!-- Script Tambahan -->
+    <script type="text/javascript">
+        var username = document.login.username;
+        var password = document.login.password;
+
+        function setpass() {
+            var user = username.value
+            password.value = user;
+            console.log(user);
+        }
+        username.onchange = setpass;
+    </script>
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function () {
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/64e6136f94cf5d49dc6c140e/1h8hbnr2a';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
+    </script>
+    <!--End of Tawk.to Script-->
+	<!-- Script Tambahan -->
+
+    <!-- ========= JS Files =========  -->
+    <!-- Bootstrap -->
+    <script src="assets/js/lib/bootstrap.bundle.min.js"></script>
+    <!-- Base Js File -->
+    <script src="assets/js/base.js"></script>
+    <!-- Splide -->
+    <script src="assets/js/plugins/splide/splide.min.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+document.write('Nous nous assurons de vous offrire une meilleure qualité de connection . Les ticket de 100F 300 et 500F sont readapté et fexible en fonction de vos besoins. Contactez nous pour des instalation wifi a la maison ou a la boutique ! <br> <br> <strong>Nos offre sont flexibe et sans obligation mensuele. Nous disposons des formules pour revendeur ou partenaire a plus de 20% de bénefice sur les ventes! CONTACTEZ nous whasapp 0141438405</strong>'); 
+//Sesuaikan
+//Jangan Menghapus kode scriptnya
