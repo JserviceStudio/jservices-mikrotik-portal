@@ -62,6 +62,7 @@ export interface SettingsSchema {
 
 interface EditorState {
   settings: SettingsSchema;
+  mikrotikProfiles: any[];
   setSettings: (settings: SettingsSchema) => void;
   setTemplateId: (templateId: TemplateId) => void;
   updateBranding: (branding: Partial<SettingsSchema['branding']>) => void;
@@ -70,6 +71,7 @@ interface EditorState {
   updatePayment: (payment: Partial<SettingsSchema['payment']>) => void;
   updateContact: (contact: Partial<SettingsSchema['contact']>) => void;
   setPlans: (plans: PlanConf[]) => void;
+  setMikrotikProfiles: (profiles: any[]) => void;
   setDeploymentStatus: (status: 'idle' | 'loading' | 'success' | 'error') => void;
   setPublicUrl: (url: string | null) => void;
 }
@@ -129,6 +131,7 @@ const defaultSettings: SettingsSchema = {
 
 export const useStore = create<EditorState>((set) => ({
   settings: defaultSettings,
+  mikrotikProfiles: [],
   setSettings: (settings) => set({ settings }),
   setTemplateId: (templateId) => set((state) => ({ settings: { ...state.settings, template_id: templateId } })),
   updateBranding: (branding) =>
@@ -140,6 +143,7 @@ export const useStore = create<EditorState>((set) => ({
   updatePayment: (payment) => set((state) => ({ settings: { ...state.settings, payment: { ...state.settings.payment, ...payment } } })),
   updateContact: (contact) => set((state) => ({ settings: { ...state.settings, contact: { ...state.settings.contact, ...contact } } })),
   setPlans: (plans) => set((state) => ({ settings: { ...state.settings, plans } })),
+  setMikrotikProfiles: (profiles) => set({ mikrotikProfiles: profiles }),
   setDeploymentStatus: (status) => set((state) => ({ settings: { ...state.settings, deploymentStatus: status } })),
   setPublicUrl: (url) => set((state) => ({ settings: { ...state.settings, publicUrl: url } })),
 }));

@@ -298,8 +298,8 @@ export const buildBase3LoginTemplate = () => `<!DOCTYPE html>
   <main class="sky-shell">
     <div class="sky-glass">
       <header class="sky-header">
-        <% if (branding.logoUrl || branding.logoPreset !== 'none') { %>
-          <img src="<%= logoSrc %>" class="sky-logo" alt="<%= branding.ispName %>">
+        <% if (branding.logoUrl || (branding.logoPreset && branding.logoPreset !== 'none')) { %>
+          <img class="logo" src="<%= logoSrc %>" alt="<%= branding.ispName %>" style="max-width: 120px; max-height: 60px; object-fit: contain; margin: 0 auto 12px; display: block;">
         <% } %>
         <h1 class="sky-title"><%= branding.ispName %></h1>
         <p class="sky-subtitle"><%= branding.wifiName %></p>

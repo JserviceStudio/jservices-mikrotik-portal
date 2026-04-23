@@ -85,9 +85,9 @@ export const LivePreview = () => {
         logoSrc:
           settings.branding.logoUrl ||
           (settings.branding.logoPreset === 'jservices'
-            ? '/assets/presets/jservices.png'
+            ? '/portal-editor/assets/presets/jservices.png'
             : settings.branding.logoPreset === 'jconnect'
-              ? '/assets/presets/jconnect.png'
+              ? '/portal-editor/assets/presets/jconnect.png'
               : ''),
       });
       const sanitized = sanitizeMikroTikPreview(rendered);

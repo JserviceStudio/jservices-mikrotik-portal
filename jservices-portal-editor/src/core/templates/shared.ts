@@ -1,4 +1,5 @@
 import { baseStyles } from './styles';
+import type { TemplateId } from '../templates';
 
 export const buildStatusTemplate = (variant: TemplateId) => {
   const isBase3 = variant === 'base-3';

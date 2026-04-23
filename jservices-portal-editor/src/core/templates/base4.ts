@@ -409,8 +409,8 @@ export const buildBase4LoginTemplate = () => `<!DOCTYPE html>
 
   <main class="m3-container">
     <div class="m3-card">
-      <% if (branding.logoUrl || branding.logoPreset !== 'none') { %>
-        <img src="<%= logoSrc %>" class="m3-logo" alt="<%= branding.ispName %>">
+      <% if (branding.logoUrl || (branding.logoPreset && branding.logoPreset !== 'none')) { %>
+        <img class="logo" src="<%= logoSrc %>" alt="<%= branding.ispName %>" style="max-width: 120px; max-height: 60px; object-fit: contain; margin: 0 auto 12px; display: block;">
       <% } %>
       <h1 class="m3-title"><%= branding.ispName %></h1>
       <p class="m3-subtitle"><%= branding.wifiName %></p>
