@@ -412,6 +412,9 @@ export const buildBase1LoginTemplate = () => `<!DOCTYPE html>
 
   <main class="main-container">
     <div class="finapp-card">
+      <% if (branding.logoUrl || (branding.logoPreset && branding.logoPreset !== 'none')) { %>
+        <img class="logo" src="<%= logoSrc %>" alt="<%= branding.ispName %>" style="max-width: 120px; max-height: 60px; object-fit: contain; margin: 0 auto 12px; display: block;">
+      <% } %>
       <div id="error-box" class="error-msg"><%= mkError %></div>
       
       <% if (features.kyc.enabled) { %>

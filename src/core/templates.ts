@@ -89,6 +89,7 @@ export interface TemplateTexts {
   errorRadiusTimeout: string;
   errorAuthInProgress: string;
   errorBrowserResponse: string;
+  finishButton: string;
 }
 
 const TEMPLATE_TEXTS: Record<TemplateLanguage, TemplateTexts> = {

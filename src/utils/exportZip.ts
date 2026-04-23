@@ -4,7 +4,6 @@ import ejs from 'ejs';
 import { SettingsSchema } from '../store/useStore';
 import { getTemplateDefinition, getTemplateTexts } from '../core/templates';
 
-// Code RouterOS MikroTik par défaut pour le rendu EJS
 const DEFAULT_MIKROTIK_VARS = {
   loginUrl: '$(link-login-only)',
   linkOrig: '$(link-orig)',
@@ -20,15 +19,8 @@ export const exportTemplateZip = async (settings: SettingsSchema) => {
   try {
     const zip = new JSZip();
     const template = getTemplateDefinition(settings.template_id);
-    const logoSrc =
-      settings.branding.logoUrl ||
-      (settings.branding.logoPreset === 'jservices'
-        ? './img/jservices.png'
-        : settings.branding.logoPreset === 'jconnect'
-          ? './img/jconnect.png'
-          : '');
+    const logoSrc = settings.branding.logoUrl || (settings.branding.logoPreset === 'jservices' ? './img/jservices.png' : settings.branding.logoPreset === 'jconnect' ? './img/jconnect.png' : '');
 
-    // Rendu des fichiers HTML via EJS
     const render = (template: string) => ejs.render(template, {
       ...settings,
       mkConfig: DEFAULT_MIKROTIK_VARS,
@@ -37,30 +29,17 @@ export const exportTemplateZip = async (settings: SettingsSchema) => {
       i18n: getTemplateTexts(settings.branding.language, {
         wifiName: settings.branding.wifiName,
         ispName: settings.branding.ispName,
-        plansSectionTitle: settings.payment.aggregator !== 'none'
-          ? (settings.branding.language === 'en' ? '📦 Buy WiFi Plans' : '📦 Achetez Forfaits WiFi')
-          : (settings.branding.language === 'en' ? '📦 Our WiFi Plans' : '📦 Nos Forfaits WiFi'),
+        plansSectionTitle: settings.payment.aggregator !== 'none' ? '📦 Forfaits WiFi' : '📦 Nos Forfaits WiFi',
       }),
     });
 
-    // Gérer les assets (logos locaux)
     const imgFolder = zip.folder('img');
     if (settings.branding.logoPreset === 'jservices') {
-      try {
-        const response = await fetch('/assets/presets/jservices.png');
-        const blob = await response.blob();
-        imgFolder?.file('jservices.png', blob);
-      } catch (e) {
-        console.error('Erreur lors de la récupération du logo preset:', e);
-      }
+      const resp = await fetch('assets/presets/jservices.png');
+      imgFolder?.file('jservices.png', await resp.blob());
     } else if (settings.branding.logoPreset === 'jconnect') {
-      try {
-        const response = await fetch('/assets/presets/jconnect.png');
-        const blob = await response.blob();
-        imgFolder?.file('jconnect.png', blob);
-      } catch (e) {
-        console.error('Erreur lors de la récupération du logo preset:', e);
-      }
+      const resp = await fetch('assets/presets/jconnect.png');
+      imgFolder?.file('jconnect.png', await resp.blob());
     }
 
     Object.entries(template.files).forEach(([filename, content]) => {
@@ -68,12 +47,8 @@ export const exportTemplateZip = async (settings: SettingsSchema) => {
     });
 
     const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(
-      content,
-      `hotspot-${settings.template_id}-${settings.branding.ispName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.zip`,
-    );
+    saveAs(content, `hotspot-${Date.now()}.zip`);
   } catch (error) {
-    console.error('Erreur lors de la génération du ZIP:', error);
-    alert('Erreur lors de la compression du fichier.');
+    alert('Erreur lors de la compression.');
   }
 };
