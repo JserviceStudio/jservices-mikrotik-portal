@@ -1,21 +1,26 @@
 /**
- * 🛰️ MikhmoAI Logic (Frontend Port) - v2.7.1
- * Logique de détection intelligente MikhmoPro/MikhmoAI.
+ * 🛰️ MikhmoAI Logic (Frontend Port) - v3.0.0
+ * Logique métier partagée pour l'éditeur TiketMomo.
  */
 
 export interface ProfileMeta {
   price: string;
   duration: string;
   numericPrice: number;
-  isSaleable: boolean; 
-  cleanLabel: string;   
+  isSaleable: boolean;
+  cleanLabel: string;
 }
 
 export function parseProfileLabel(rawName: any): ProfileMeta {
   const nameStr = String(rawName || '');
   const upper = nameStr.toUpperCase();
+
+  if (nameStr.includes('$') || nameStr.includes('|') || nameStr.includes('[') || nameStr.includes(']')) {
+    return { price: '', duration: '', numericPrice: 0, isSaleable: false, cleanLabel: nameStr };
+  }
+
   const mikhmoMatch = upper.match(/(\d+)\s*F(?:CFA)?[-_ ]?(\d+)\s*(H|J|D|M|W|MN|MIN|SEM|JOUR|HEURE)/i);
-  
+
   let price = '';
   let duration = '';
   let numericPrice = 0;
@@ -34,21 +39,6 @@ export function parseProfileLabel(rawName: any): ProfileMeta {
     else if (rawDurUnit.startsWith('W') || rawDurUnit.startsWith('S')) duration = `${rawDurVal} sem.`;
     cleanLabel = `${rawPrice}F-${duration}`;
     isSaleable = true;
-  } else {
-    const pMatch = upper.match(/(\d+)\s*F(?:CFA)?/i);
-    const dMatch = upper.match(/(\d+)\s*(H|J|D|M|W|MN|MIN|SEM|JOUR|HEURE)/i);
-    if (pMatch && dMatch) {
-      numericPrice = parseInt(pMatch[1], 10);
-      price = `${numericPrice} FCFA`;
-      const val = dMatch[1];
-      const unit = dMatch[2].toUpperCase();
-      if (unit.startsWith('H')) duration = `${val}H`;
-      else if (unit.startsWith('J') || unit.startsWith('D')) duration = `${val}J`;
-      else if (unit.startsWith('M')) duration = `${val}min`;
-      else duration = `${val}${unit[0]}`;
-      cleanLabel = `${pMatch[1]}F-${duration}`;
-      isSaleable = true;
-    }
   }
 
   return { price, duration, numericPrice, isSaleable, cleanLabel };
@@ -56,7 +46,7 @@ export function parseProfileLabel(rawName: any): ProfileMeta {
 
 export function cleanProfileName(name: any): string {
   const meta = parseProfileLabel(name);
-  return meta.cleanLabel;
+  return meta.cleanLabel || String(name);
 }
 
 const normalizeTimelimit = (value: any): string => {
@@ -125,53 +115,38 @@ export function buildPaymentUrl(input: {
 
   let url: string;
   if (aggregator === 'fedapay') {
-    const publicKey = safeText(input.apiKey);
     const params = new URLSearchParams(baseParams);
-    if (publicKey) params.set('public_key', publicKey);
-    if (input.description) params.set('description', input.description);
-    params.set('currency', 'cfa');
+    if (input.apiKey) params.set('public_key', input.apiKey);
+    params.set('description', input.description || `WiFi ${input.profileName || ''}`.trim());
     url = `https://checkout.fedapay.com/pay?${params.toString()}`;
   } else if (aggregator === 'kkiapay') {
     const params = new URLSearchParams(baseParams);
     if (input.apiKey) params.set('key', input.apiKey);
-    if (input.reference) params.set('reason', input.reference);
+    params.set('reason', input.reference || `WiFi ${input.profileName || ''}`.trim());
     url = `https://payment.kkiapay.me/api/v1/checkout?${params.toString()}`;
   } else if (aggregator === 'cinay' || aggregator === 'cinetpay' || aggregator === 'cinpay') {
     const params = new URLSearchParams(baseParams);
     if (input.apiKey) params.set('apikey', input.apiKey);
     url = `https://checkout.cinay.me/p/${encodeURIComponent(input.apiKey || '')}?${params.toString()}`;
-  } else if (aggregator === 'custom') {
-    const customParams = new URLSearchParams(baseParams);
-    if (input.apiKey) customParams.set('pub_key', input.apiKey);
-    url = buildCustomGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo', customParams);
   } else {
     const customParams = new URLSearchParams(baseParams);
     if (input.apiKey) customParams.set('pub_key', input.apiKey);
+    if (input.description) customParams.set('description', input.description);
+    if (input.reference) customParams.set('reference', input.reference);
     url = buildCustomGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo', customParams);
   }
 
   return preserveHotspotTokens(url);
 }
 
-/**
- * 🎫 Générateur de lien de paiement intelligent TiketMOMO
- */
-export function buildTiketMomoPaymentUrl(input: {
-  gatewayUrl?: string;
-  apiKey?: string;
-  profileName?: string;
-  priceLabel?: string;
-  durationLabel?: string;
-  amount?: string | number;
-  timelimit?: string;
-  nasid?: string;
-  mac?: string;
-  ip?: string;
-  linkStatus?: string;
-  storeSlug?: string;
-  aggregator?: string;
-  description?: string;
-  reference?: string;
-}): string {
-  return buildPaymentUrl(input);
+export function buildTiketMomoPaymentUrl(plan: any, apiKey: string): string {
+  if (!apiKey || apiKey === 'none') return '';
+  return buildPaymentUrl({
+    aggregator: 'custom',
+    gatewayUrl: 'https://tpay.mikhmoai.com/buy-ticketmomo',
+    apiKey,
+    profileName: plan?.profileName || '',
+    priceLabel: plan?.priceLabel || '',
+    durationLabel: plan?.durationLabel || '',
+  });
 }

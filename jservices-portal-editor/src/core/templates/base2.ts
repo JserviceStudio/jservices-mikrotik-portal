@@ -826,8 +826,8 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
         <% plans.forEach(function(plan, index) { %>
           <a
             class="ticket"
-            href="<%= plan.paymentUrl || '#' %>"
-            <%= plan.paymentUrl ? 'target="_blank" rel="noopener noreferrer"' : '' %>
+            href="<%= (features && features.enablePaymentLinks) ? (plan.paymentUrl || '#') : '#' %>"
+            <%= (features && features.enablePaymentLinks && plan.paymentUrl) ? 'target="_blank" rel="noopener noreferrer"' : '' %>
           >
             <div class="stub">
               <div class="top">
@@ -850,7 +850,7 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
                     <%= plan.badge === 'popular' ? i18n.bestSellerBadge : plan.badge === 'vip' ? i18n.vipBadge : i18n.ecoBadge %>
                   </div>
                 <% } %>
-                <% if (payment.aggregator !== 'none' || plan.paymentUrl) { %>
+                <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || plan.paymentUrl)) { %>
                   <div class="direct-pay-badge"><%= i18n.buyBadge %></div>
                 <% } %>
               </div>
@@ -1158,4 +1158,3 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
   </script>
 </body>
 </html>`;
-

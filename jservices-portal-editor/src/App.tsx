@@ -69,6 +69,7 @@ const normalizeEditorConfig = (input: any): SettingsSchema | null => {
     payment: {
       aggregator:
         aggregator === 'fedapay' ? 'FedaPay' :
+        aggregator === 'kkiapay' ? 'KKiaPay' :
         aggregator === 'moailtestore' ? 'MoailteStore' :
         aggregator === 'cinay' ? 'Cinay' :
         aggregator === 'custom' ? 'Custom' : 'none',

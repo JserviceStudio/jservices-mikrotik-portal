@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Phone, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon, Copy, EyeOff } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { ImageCropper } from './ImageCropper';
-import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
+import { parseProfileLabel, cleanProfileName, buildPaymentUrl } from '../../utils/mikhmoai';
 import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
@@ -31,16 +31,39 @@ export const Sidebar = () => {
     try {
       const updatedPlans = settings.plans.map(plan => ({
         ...plan,
-        paymentUrl: buildTiketMomoPaymentUrl({
-            ...plan,
-            apiKey: settings.payment.apiKey,
-            aggregator: settings.payment.aggregator
-        })
+        paymentUrl: settings.features.enablePaymentLinks ? buildPaymentUrl({
+          aggregator: settings.payment.aggregator,
+          gatewayUrl: settings.payment.gatewayUrl,
+          apiKey: settings.payment.apiKey,
+          profileName: plan.profileName,
+          priceLabel: plan.priceLabel,
+          durationLabel: plan.durationLabel,
+          nasid: '$(server-name)',
+          mac: '$(mac)',
+          ip: '$(ip)',
+          linkStatus: '$(link-status-esc)',
+        }) : ''
       }));
       const result = await deployToCloud({ ...settings, plans: updatedPlans });
       if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
     } catch (err) { setDeploymentStatus('error'); }
   };
+
+  const paymentPreviews = settings.plans.map((plan) => ({
+    ...plan,
+    paymentUrl: settings.features.enablePaymentLinks ? buildPaymentUrl({
+      aggregator: settings.payment.aggregator,
+      gatewayUrl: settings.payment.gatewayUrl,
+      apiKey: settings.payment.apiKey,
+      profileName: plan.profileName,
+      priceLabel: plan.priceLabel,
+      durationLabel: plan.durationLabel,
+      nasid: '$(server-name)',
+      mac: '$(mac)',
+      ip: '$(ip)',
+      linkStatus: '$(link-status-esc)',
+    }) : ''
+  }));
 
   const movePlan = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -75,7 +98,7 @@ export const Sidebar = () => {
   return (
     <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden">
       <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
-        🛰️ MikhmoAI Engine Active v2.9 (Build Success)
+        🛰️ MikhmoAI Engine Active v2.9 (Build Fixed)
       </div>
 
       <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
@@ -286,7 +309,18 @@ export const Sidebar = () => {
         {activeTab === 'payment' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Passerelle de Paiement</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Passerelle de Paiement</h3>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.features.enablePaymentLinks}
+                      onChange={(e) => updateFeatures({ enablePaymentLinks: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>
+                  </label>
+                </div>
                 <div className="space-y-4">
                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Agrégateur</label>
@@ -295,7 +329,8 @@ export const Sidebar = () => {
                         <option value="none">Désactivé</option>
                         <option value="FedaPay">FedaPay</option>
                         <option value="KKiaPay">KKiaPay</option>
-                        <option value="Cinpay">Cinpay</option>
+                        <option value="Cinay">Cinay</option>
+                        <option value="Custom">Custom</option>
                       </select>
                    </div>
                    <div className="space-y-1.5">
@@ -306,6 +341,57 @@ export const Sidebar = () => {
                         <LockIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                       </div>
                    </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Gateway URL</label>
+                      <input
+                        type="text"
+                        value={settings.payment.gatewayUrl || ''}
+                        onChange={(e) => updatePayment({ gatewayUrl: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-xs outline-none"
+                        placeholder="https://tpay.mikhmoai.com/buy-ticketmomo"
+                      />
+                   </div>
+                </div>
+             </section>
+
+             <section className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Aperçu des Liens</h3>
+                  {!settings.features.enablePaymentLinks && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                      <EyeOff size={12} /> Désactivé
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {paymentPreviews.length > 0 ? paymentPreviews.slice(0, 4).map((plan) => (
+                    <div key={plan.id} className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-black text-slate-900">{plan.displayName}</div>
+                          <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{plan.priceLabel} • {plan.durationLabel}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!plan.paymentUrl) return;
+                            await navigator.clipboard.writeText(plan.paymentUrl);
+                          }}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-blue-200 hover:text-blue-600 transition-all"
+                          title="Copier le lien"
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                      <div className="mt-3 break-all rounded-xl bg-slate-50 px-3 py-2 text-[10px] font-mono text-slate-600">
+                        {plan.paymentUrl || 'Lien désactivé'}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      Aucun profil à prévisualiser
+                    </div>
+                  )}
                 </div>
              </section>
 

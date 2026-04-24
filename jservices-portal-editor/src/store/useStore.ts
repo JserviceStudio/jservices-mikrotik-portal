@@ -37,7 +37,7 @@ export interface SettingsSchema {
   };
   plans: PlanConf[];
   payment: {
-    aggregator: 'none' | 'FedaPay' | 'MoailteStore' | 'Cinay' | 'Custom';
+    aggregator: 'none' | 'FedaPay' | 'MoailteStore' | 'KKiaPay' | 'Cinay' | 'Custom';
     apiKey: string;
     clientId?: string;
     gatewayUrl?: string;
