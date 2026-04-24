@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon, Copy, EyeOff } from 'lucide-react';
+import { Download, Trash2, Plus, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon, Copy, EyeOff } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
@@ -10,7 +10,6 @@ import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
-  const [activeTab, setActiveTab] = useState('branding');
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -113,23 +112,7 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      <div className="flex border-b shrink-0 bg-white">
-        {[
-          { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
-          { id: 'plans', icon: <Ticket size={16} />, label: 'Forfaits' },
-          { id: 'payment', icon: <CreditCard size={16} />, label: 'Paiement' },
-          { id: 'features', icon: <Settings size={16} />, label: 'Réglages' },
-        ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-            {tab.icon}
-            <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar pb-32">
-        {activeTab === 'branding' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Template de Base</h3>
@@ -209,10 +192,61 @@ export const Sidebar = () => {
                 </div>
                 {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={(cropped) => { updateBranding({ logoPreset: 'none', logoUrl: cropped }); setImageToCrop(null); }} onCancel={() => setImageToCrop(null)} />}
              </section>
-          </div>
-        )}
 
-        {activeTab === 'plans' && (
+             <section className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Réglages du Portail</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fonctions</span>
+                </div>
+                <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                        {(['auto', 'light', 'dark'] as const).map((m) => (
+                        <button key={m} onClick={() => updateFeatures({ themeMode: m })}
+                            className={`flex flex-col items-center gap-2 p-3 border rounded-xl transition-all ${settings.features.themeMode === m ? 'border-blue-600 bg-blue-50 text-blue-600 font-black' : 'border-slate-100 text-slate-400 bg-white hover:border-slate-200'}`}>
+                            {m === 'auto' ? <Monitor size={18} /> : m === 'light' ? <Sun size={18} /> : <Moon size={18} />}
+                            <span className="text-[9px] uppercase tracking-tighter">{m}</span>
+                        </button>
+                        ))}
+                    </div>
+
+                    <FeatureToggle checked={settings.features.enableQrScanner} icon={<QrCode size={16}/>} label="Scanner QR Code" onChange={(v) => updateFeatures({ enableQrScanner: v })} />
+                    <FeatureToggle checked={settings.features.enableTrial} icon={<FlaskConical size={16}/>} label="Bouton Essai Gratuit" onChange={(v) => updateFeatures({ enableTrial: v })} />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> ARCEP KYC</h3>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={settings.features.kyc.enabled} onChange={(e) => updateKyc({ enabled: e.target.checked })} className="sr-only peer" />
+                          <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>
+                        </label>
+                    </div>
+
+                    {settings.features.kyc.enabled && (
+                        <div className="space-y-4 p-5 bg-blue-50/50 rounded-3xl border border-blue-100 animate-in zoom-in-95 duration-200">
+                           <div className="space-y-1.5">
+                              <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Code Pays</label>
+                              <input type="text" value={settings.features.kyc.countryCode} onChange={(e) => updateKyc({ countryCode: e.target.value })} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" placeholder="+229" />
+                           </div>
+                           <div className="space-y-1.5">
+                              <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Longueur Mobile</label>
+                              <input type="number" value={settings.features.kyc.phoneLength} onChange={(e) => updateKyc({ phoneLength: parseInt(e.target.value) || 0 })} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" />
+                           </div>
+                           <div className="space-y-1.5">
+                              <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Préfixes Autorisés</label>
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                 {settings.features.kyc.authorizedPrefixes.map(p => (
+                                    <span key={p} className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-black flex items-center gap-1">{p} <button onClick={() => updateKyc({ authorizedPrefixes: settings.features.kyc.authorizedPrefixes.filter(x => x !== p) })}><X size={10}/></button></span>
+                                 ))}
+                              </div>
+                              <input type="text" placeholder="Ajouter (Entrée)..." onKeyDown={(e) => { if (e.key === 'Enter') { const v = e.currentTarget.value.trim(); if (v) { updateKyc({ authorizedPrefixes: [...settings.features.kyc.authorizedPrefixes, v] }); e.currentTarget.value = ''; } } }} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" />
+                           </div>
+                        </div>
+                    )}
+                </div>
+             </section>
+          </div>
+
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              {mikrotikProfiles.length > 0 && (
                 <div className="mb-10 -mx-6 px-6">
@@ -304,9 +338,7 @@ export const Sidebar = () => {
                 </button>
              </div>
           </div>
-        )}
 
-        {activeTab === 'payment' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -416,64 +448,6 @@ export const Sidebar = () => {
                 </div>
              </section>
           </div>
-        )}
-
-        {activeTab === 'features' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
-             <section className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Options du Template</h3>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase block mb-2">Thème Visuel</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        {(['auto', 'light', 'dark'] as const).map((m) => (
-                        <button key={m} onClick={() => updateFeatures({ themeMode: m })}
-                            className={`flex flex-col items-center gap-2 p-3 border rounded-xl transition-all ${settings.features.themeMode === m ? 'border-blue-600 bg-blue-50 text-blue-600 font-black' : 'border-slate-100 text-slate-400 bg-white hover:border-slate-200'}`}>
-                            {m === 'auto' ? <Monitor size={18} /> : m === 'light' ? <Sun size={18} /> : <Moon size={18} />}
-                            <span className="text-[9px] uppercase tracking-tighter">{m}</span>
-                        </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="space-y-3 pt-4">
-                    <FeatureToggle checked={settings.features.enableQrScanner} icon={<QrCode size={16}/>} label="Scanner QR Code" onChange={(v) => updateFeatures({ enableQrScanner: v })} />
-                    <FeatureToggle checked={settings.features.enableTrial} icon={<FlaskConical size={16}/>} label="Bouton Essai Gratuit" onChange={(v) => updateFeatures({ enableTrial: v })} />
-                </div>
-             </section>
-
-             <section className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> ARCEP KYC</h3>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked={settings.features.kyc.enabled} onChange={(e) => updateKyc({ enabled: e.target.checked })} className="sr-only peer" />
-                      <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>
-                    </label>
-                </div>
-
-                {settings.features.kyc.enabled && (
-                    <div className="space-y-4 p-5 bg-blue-50/50 rounded-3xl border border-blue-100 animate-in zoom-in-95 duration-200">
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Code Pays</label>
-                          <input type="text" value={settings.features.kyc.countryCode} onChange={(e) => updateKyc({ countryCode: e.target.value })} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" placeholder="+229" />
-                       </div>
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Longueur Mobile</label>
-                          <input type="number" value={settings.features.kyc.phoneLength} onChange={(e) => updateKyc({ phoneLength: parseInt(e.target.value) || 0 })} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" />
-                       </div>
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase text-blue-600 ml-1">Préfixes Autorisés</label>
-                          <div className="flex flex-wrap gap-1.5 mb-2">
-                             {settings.features.kyc.authorizedPrefixes.map(p => (
-                                <span key={p} className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-black flex items-center gap-1">{p} <button onClick={() => updateKyc({ authorizedPrefixes: settings.features.kyc.authorizedPrefixes.filter(x => x !== p) })}><X size={10}/></button></span>
-                             ))}
-                          </div>
-                          <input type="text" placeholder="Ajouter (Entrée)..." onKeyDown={(e) => { if (e.key === 'Enter') { const v = e.currentTarget.value.trim(); if (v) { updateKyc({ authorizedPrefixes: [...settings.features.kyc.authorizedPrefixes, v] }); e.currentTarget.value = ''; } } }} className="w-full p-3 bg-white border-none rounded-xl font-bold text-sm" />
-                       </div>
-                    </div>
-                )}
-             </section>
-          </div>
-        )}
       </div>
     </div>
   );
