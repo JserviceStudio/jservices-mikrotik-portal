@@ -62,6 +62,10 @@ export const Sidebar = () => {
     return buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl);
   };
 
+  const togglePaymentLinks = (enabled: boolean) => {
+    updateFeatures({ enablePaymentLinks: enabled });
+  };
+
   const handleSaveCloud = async () => {
     setDeploymentStatus('loading');
     try {
@@ -179,7 +183,15 @@ export const Sidebar = () => {
         {activeTab === 'plans' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <div className="flex items-center justify-between border-b pb-2">
-               <h2 className="font-semibold text-lg uppercase tracking-tight">Gestion des Tarifs</h2>
+               <div className="space-y-2">
+                 <h2 className="font-semibold text-lg uppercase tracking-tight">Gestion des Tarifs</h2>
+                 <FeatureToggle
+                   checked={settings.features.enablePaymentLinks}
+                   icon={<CreditCard size={16} />}
+                   label="Paiements en ligne"
+                   onChange={togglePaymentLinks}
+                 />
+               </div>
                <button onClick={autoAssignBadges} className="px-3 py-1.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-500/10 hover:bg-amber-500 hover:text-white transition-all">
                   <Sparkles size={12} className="inline mr-1" /> Auto-Badges
                </button>
@@ -210,9 +222,53 @@ export const Sidebar = () => {
                             <option value="vip">V.I.P</option>
                         </select>
                      </div>
+                     <div className="mt-3 grid grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          value={p.priceLabel}
+                          onChange={(e) => updatePlan(idx, pl => ({ ...pl, priceLabel: e.target.value }))}
+                          className="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none"
+                          placeholder="Montant"
+                        />
+                        <input
+                          type="text"
+                          value={p.durationLabel}
+                          onChange={(e) => updatePlan(idx, pl => ({ ...pl, durationLabel: e.target.value }))}
+                          className="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none"
+                          placeholder="Durée"
+                        />
+                        <input
+                          type="text"
+                          value={p.dataLimit || ''}
+                          onChange={(e) => updatePlan(idx, pl => ({ ...pl, dataLimit: e.target.value }))}
+                          className="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none"
+                          placeholder="Data"
+                        />
+                     </div>
+                     {settings.features.enablePaymentLinks && settings.payment.apiKey ? (
+                       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                         <div className="flex items-center justify-between gap-3 mb-2">
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lien généré</p>
+                           <button
+                             type="button"
+                             onClick={() => copyText(buildPreviewUrl(p), 'gateway')}
+                             className="rounded-lg border border-slate-200 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:border-blue-500 hover:text-blue-600"
+                           >
+                             Copier
+                           </button>
+                         </div>
+                         <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
+                           {buildPreviewUrl(p)}
+                         </p>
+                       </div>
+                     ) : (
+                       <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">
+                         Active les paiements en ligne et renseigne la clé publique pour générer le lien du profil.
+                       </div>
+                     )}
                   </div>
                 ))}
-                <button onClick={() => setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: '1H', displayName: 'Nouveau', priceLabel: '100 FCFA', durationLabel: '1H', speedLabel: '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }])} 
+                <button onClick={() => setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: '1H', displayName: 'Nouveau', priceLabel: '100 FCFA', durationLabel: '1H', dataLimit: '', speedLabel: '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }])} 
                   className="w-full border-2 border-dashed border-slate-200 py-4 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2">
                     <Plus size={14} /> Ajouter manuellement
                 </button>
@@ -224,6 +280,12 @@ export const Sidebar = () => {
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Passerelle de Paiement</h3>
+                <FeatureToggle
+                  checked={settings.features.enablePaymentLinks}
+                  icon={<CreditCard size={16} />}
+                  label="Paiements en ligne"
+                  onChange={togglePaymentLinks}
+                />
                 <div className="grid gap-4 lg:grid-cols-2">
                    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                       <div className="flex items-center justify-between gap-3 mb-3">
@@ -298,6 +360,7 @@ export const Sidebar = () => {
                             profileName: '150F-8H',
                             priceLabel: '150 FCFA',
                             durationLabel: '8H',
+                            dataLimit: '1Go',
                           }) || 'Le lien apparaîtra ici quand la clé publique est renseignée.'}
                         </p>
                       </div>

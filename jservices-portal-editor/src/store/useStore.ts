@@ -7,6 +7,7 @@ export interface PlanConf {
   displayName: string;
   priceLabel: string;
   durationLabel: string;
+  dataLimit?: string;
   speedLabel: string;
   badge: 'none' | 'vip' | 'eco' | 'popular';
   paymentUrl?: string; // Opt
@@ -98,6 +99,7 @@ const defaultSettings: SettingsSchema = {
       displayName: '1 Heure VIP',
       priceLabel: '100 FCFA',
       durationLabel: '1 Heure',
+      dataLimit: '',
       speedLabel: '2M/2M',
       badge: 'none',
       displayOrder: 1

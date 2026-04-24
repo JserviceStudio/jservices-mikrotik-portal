@@ -29,6 +29,7 @@ const normalizePlan = (offer: any, index: number): PlanConf => ({
   displayName: safeText(offer?.displayName || offer?.profileName),
   priceLabel: safeText(offer?.priceLabel || ''),
   durationLabel: safeText(offer?.durationLabel || ''),
+  dataLimit: safeText(offer?.dataLimit || offer?.data_limit || ''),
   speedLabel: safeText(offer?.speedLabel || ''),
   badge: 'none',
   paymentUrl: safeText(offer?.paymentUrl || ''),
