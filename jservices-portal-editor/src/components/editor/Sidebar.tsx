@@ -1,19 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Phone, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Globe, ExternalLink, Loader2, Cloud } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
-import { ImageCropper } from './ImageCropper';
 import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
 import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const selectedTemplate = TEMPLATE_DEFINITIONS[settings.template_id];
 
   const handleForceRefresh = async () => {
     setIsRefreshing(true);
@@ -76,13 +73,13 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden">
+    <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden text-slate-900">
       <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
-        🛰️ MikhmoAI Engine Active v2.9.4 (Elite Edition)
+        🛰️ MikhmoAI Engine Active v2.9.6 (Final Clean)
       </div>
 
       <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
-        <h1 className="text-xl font-bold flex items-center gap-2 text-slate-900">
+        <h1 className="text-xl font-bold flex items-center gap-2">
           <Settings className="text-blue-600" /> Éditeur Portail
         </h1>
         <div className="flex gap-2">
@@ -93,12 +90,19 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      {/* Tabs Menu */}
       <div className="flex border-b shrink-0">
-        <TabBtn icon={<Palette size={16}/>} label="Design" active={activeTab==='branding'} onClick={() => setActiveTab('branding')} />
-        <TabBtn icon={<Ticket size={16}/>} label="Forfaits" active={activeTab==='plans'} onClick={() => setActiveTab('plans')} />
-        <TabBtn icon={<CreditCard size={16}/>} label="Paiement" active={activeTab==='payment'} onClick={() => setActiveTab('payment')} />
-        <TabBtn icon={<ShieldCheck size={16}/>} label="Réglages" active={activeTab==='features'} onClick={() => setActiveTab('features')} />
+        {[
+          { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
+          { id: 'plans', icon: <Ticket size={16} />, label: 'Forfaits' },
+          { id: 'payment', icon: <CreditCard size={16} />, label: 'Paiement' },
+          { id: 'features', icon: <ShieldCheck size={16} />, label: 'Réglages' },
+        ].map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600 bg-blue-50/20' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+            {tab.icon}
+            <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
+          </button>
+        ))}
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar pb-32 bg-slate-50/30">
@@ -112,10 +116,7 @@ export const Sidebar = () => {
                       {Object.values(TEMPLATE_DEFINITIONS).map((t) => (
                         <button key={t.id} onClick={() => setTemplateId(t.id)}
                           className={`rounded-2xl border p-3 text-left transition-all ${settings.template_id === t.id ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                            <Layers size={16} className={settings.template_id === t.id ? 'text-blue-600' : 'text-slate-400'} />
-                            {t.label}
-                          </div>
+                          <p className="text-sm font-bold">{t.label}</p>
                           <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t.description}</p>
                         </button>
                       ))}
@@ -123,36 +124,21 @@ export const Sidebar = () => {
                 </div>
 
                 <div className="space-y-4">
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Nom du WiFi</label>
-                      <input type="text" value={settings.branding.wifiName} onChange={(e) => updateBranding({ wifiName: e.target.value })}
-                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none" />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Enseigne (ISP)</label>
-                      <input type="text" value={settings.branding.ispName} onChange={(e) => updateBranding({ ispName: e.target.value })}
-                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none" />
-                   </div>
+                   <input type="text" value={settings.branding.wifiName} onChange={(e) => updateBranding({ wifiName: e.target.value })}
+                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm" placeholder="Nom du WiFi" />
+                   <input type="text" value={settings.branding.ispName} onChange={(e) => updateBranding({ ispName: e.target.value })}
+                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm" placeholder="Enseigne" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Couleur 1</label>
-                      <input type="color" value={settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Couleur 2</label>
-                      <input type="color" value={settings.branding.secondaryColor} onChange={(e) => updateBranding({ secondaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
-                   </div>
+                   <input type="color" value={settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
+                   <input type="color" value={settings.branding.secondaryColor} onChange={(e) => updateBranding({ secondaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
                 </div>
                 
-                <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Langue</label>
-                   <div className="flex gap-2">
-                     {[{v:'fr', f:'🇫🇷'}, {v:'en', f:'🇬🇧'}].map(l => (
-                       <button key={l.v} onClick={() => updateBranding({ language: l.v as any })} className={`px-4 py-2 border rounded-xl text-xl ${settings.branding.language === l.v ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>{l.f}</button>
-                     ))}
-                   </div>
+                <div className="flex gap-2">
+                  {[{v:'fr', f:'🇫🇷'}, {v:'en', f:'🇬🇧'}].map(l => (
+                    <button key={l.v} onClick={() => updateBranding({ language: l.v as any })} className={`px-4 py-2 border rounded-xl text-xl ${settings.branding.language === l.v ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>{l.f}</button>
+                  ))}
                 </div>
              </section>
           </div>
@@ -167,7 +153,6 @@ export const Sidebar = () => {
                </button>
              </div>
 
-             {/* 🛰️ Carousel des Profils MikroTik (MikhmoAI UI/UX) */}
              {mikrotikProfiles.length > 0 && (
                 <div className="mb-6 -mx-6 px-6">
                    <div className="flex items-center justify-between mb-4 px-1">
@@ -215,9 +200,9 @@ export const Sidebar = () => {
                            </p>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={() => movePlan(idx, 'up')} disabled={idx === 0} className="p-1 text-slate-300 disabled:opacity-20"><ChevronUp size={14}/></button>
-                            <button onClick={() => movePlan(idx, 'down')} disabled={idx === settings.plans.length - 1} className="p-1 text-slate-300 disabled:opacity-20"><ChevronDown size={14}/></button>
-                            <button onClick={() => setPlans(settings.plans.filter(pl => pl.id !== p.id))} className="p-1 text-slate-300 hover:text-rose-600 ml-1"><Trash2 size={16}/></button>
+                            <button onClick={() => movePlan(idx, 'up')} disabled={idx === 0} className="p-1.5 text-slate-300 hover:text-blue-600 disabled:opacity-20"><ChevronUp size={14}/></button>
+                            <button onClick={() => movePlan(idx, 'down')} disabled={idx === settings.plans.length - 1} className="p-1.5 text-slate-300 hover:text-blue-600 disabled:opacity-20"><ChevronDown size={14}/></button>
+                            <button onClick={() => setPlans(settings.plans.filter(pl => pl.id !== p.id))} className="p-1.5 text-slate-300 hover:text-rose-600 ml-1"><Trash2 size={16}/></button>
                         </div>
                      </div>
                      <div className="grid grid-cols-2 gap-3">
@@ -244,21 +229,15 @@ export const Sidebar = () => {
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Passerelle de Paiement</h3>
                 <div className="space-y-4">
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Agrégateur</label>
-                      <select value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}
-                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none">
-                        <option value="none">Désactivé</option>
-                        <option value="FedaPay">FedaPay</option>
-                        <option value="KKiaPay">KKiaPay</option>
-                        <option value="Cinpay">Cinpay</option>
-                      </select>
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Clé API Publique</label>
-                      <input type="text" value={settings.payment.apiKey} onChange={(e) => updatePayment({ apiKey: e.target.value })}
-                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none" placeholder="pk_live_..." />
-                   </div>
+                   <select value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}
+                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none">
+                     <option value="none">Désactivé</option>
+                     <option value="FedaPay">FedaPay</option>
+                     <option value="KKiaPay">KKiaPay</option>
+                     <option value="Cinpay">Cinpay</option>
+                   </select>
+                   <input type="text" value={settings.payment.apiKey} onChange={(e) => updatePayment({ apiKey: e.target.value })}
+                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none" placeholder="Clé API Publique" />
                 </div>
              </section>
           </div>
@@ -290,7 +269,7 @@ export const Sidebar = () => {
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Contact Support</h3>
                 <div className="space-y-4">
-                   <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="WhatsApp (229...)" />
+                   <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="WhatsApp" />
                    <textarea value={settings.contact.address} onChange={(e) => updateContact({ address: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm min-h-[100px] resize-none" placeholder="Adresse" />
                 </div>
              </section>
@@ -300,13 +279,6 @@ export const Sidebar = () => {
     </div>
   );
 };
-
-const TabBtn = ({ icon, label, active, onClick }: { icon: ReactNode, label: string, active: boolean, onClick: () => void }) => (
-  <button onClick={onClick} className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${active ? 'border-blue-600 text-blue-600 bg-blue-50/20' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-    {icon}
-    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-  </button>
-);
 
 const FeatureToggle = ({ checked, icon, label, onChange }: { checked: boolean, icon: ReactNode, label: string, onChange: (v: boolean) => void }) => (
   <label className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
