@@ -41,6 +41,7 @@ export interface SettingsSchema {
     apiKey: string;
     clientId?: string;
     gatewayUrl?: string;
+    callbackUrl?: string;
   };
   features: {
     themeMode: 'auto' | 'light' | 'dark';
@@ -103,7 +104,9 @@ const defaultSettings: SettingsSchema = {
   ],
   payment: {
     aggregator: 'none',
-    apiKey: ''
+    apiKey: '',
+    gatewayUrl: 'https://tpay.mikhmoai.com/buy-ticketmomo',
+    callbackUrl: 'https://hook.mikhmoai.com/pay_callback/fedapay/MoailtePro'
   },
   features: {
     themeMode: 'auto',
