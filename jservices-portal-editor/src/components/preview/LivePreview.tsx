@@ -3,7 +3,6 @@ import ejs from 'ejs';
 import { CheckCircle2, ChevronRight, ShoppingBag, Signal, Sparkles } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { getTemplateDefinition, getTemplateTexts } from '../../core/templates';
-import { cleanProfileName, parseProfileLabel } from '../../utils/mikhmoai';
 
 const MOCK_MIKROTIK_CONFIG = {
   loginUrl: 'https://demo.mikrotik.com/login',
@@ -72,19 +71,14 @@ export const LivePreview = () => {
   const setPlans = useStore((state) => state.setPlans);
   const [htmlContent, setHtmlContent] = useState({ mobile: '', desktop: '' });
 
-  const saleableProfiles = useMemo(() => {
-    return mikrotikProfiles
-      .map((profile: any) => ({ ...profile, meta: parseProfileLabel(profile?.name) }))
-      .filter((profile: any) => profile?.meta?.isSaleable);
-  }, [mikrotikProfiles]);
+  const routerProfiles = useMemo(() => mikrotikProfiles, [mikrotikProfiles]);
 
   const selectedProfileNames = useMemo(() => {
     return new Set(settings.plans.map((plan) => plan.profileName));
   }, [settings.plans]);
 
   const toggleProfile = (profile: any) => {
-    const meta = profile.meta || parseProfileLabel(profile?.name);
-    const profileName = cleanProfileName(profile?.name || '');
+    const profileName = String(profile?.name || profile?.['.id'] || '').trim();
     const isSelected = selectedProfileNames.has(profileName);
 
     if (isSelected) {
@@ -97,10 +91,10 @@ export const LivePreview = () => {
       {
         id: Math.random().toString(36).slice(2, 11),
         profileName,
-        displayName: `${meta.price} / ${meta.duration}`,
-        priceLabel: meta.price,
-        durationLabel: meta.duration,
-        speedLabel: profile?.['rate-limit'] || '2M/2M',
+        displayName: profileName,
+        priceLabel: '',
+        durationLabel: '',
+        speedLabel: String(profile?.['rate-limit'] || profile?.['shared-users'] || ''),
         badge: 'none',
         displayOrder: settings.plans.length + 1,
       },
@@ -160,16 +154,15 @@ export const LivePreview = () => {
             </div>
             <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               <Signal size={12} className="text-blue-600" />
-              {saleableProfiles.length} trouvés
+              {routerProfiles.length} trouvés
             </div>
           </div>
 
-          {saleableProfiles.length > 0 ? (
+          {routerProfiles.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 pr-2 no-scrollbar snap-x snap-mandatory">
-              {saleableProfiles.map((profile: any) => {
-                const profileName = cleanProfileName(profile?.name || '');
+              {routerProfiles.map((profile: any) => {
+                const profileName = String(profile?.name || profile?.['.id'] || '').trim();
                 const isSelected = selectedProfileNames.has(profileName);
-                const meta = profile.meta || parseProfileLabel(profile?.name);
 
                 return (
                   <button
@@ -190,10 +183,6 @@ export const LivePreview = () => {
                       </div>
                     </div>
 
-                    <p className={`text-sm font-black leading-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>{meta.price}</p>
-                    <p className={`mt-1 text-[10px] font-bold uppercase tracking-[0.2em] ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                      {meta.duration}
-                    </p>
                     <p className={`mt-3 line-clamp-2 text-[11px] leading-relaxed ${isSelected ? 'text-blue-50' : 'text-slate-500'}`}>
                       {profileName}
                     </p>
