@@ -197,21 +197,20 @@ export const Sidebar = () => {
                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
                      {mikrotikProfiles
                       .map(p => ({ ...p, meta: parseProfileLabel(p.name) }))
-                      .filter(p => p.meta.isSaleable)
                       .map((p) => {
-                       const isSelected = settings.plans.some(plan => plan.profileName === p.name);
+                       const profileName = String(p?.name || p?.['.id'] || '').trim();
+                       const isSelected = settings.plans.some(plan => plan.profileName === profileName);
                        return (
-                        <button key={p.name} onClick={() => {
-                             if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== p.name)); return; }
-                             const meta = p.meta;
-                             setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: p.name, displayName: `${meta.price} / ${meta.duration}`, priceLabel: meta.price, durationLabel: meta.duration, speedLabel: p['rate-limit'] || '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }]);
+                        <button key={profileName} onClick={() => {
+                             if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== profileName)); return; }
+                             setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName, displayName: profileName, priceLabel: '', durationLabel: '', speedLabel: String(p['rate-limit'] || p['shared-users'] || ''), badge: 'none', displayOrder: settings.plans.length + 1 }]);
                           }}
                           className={`flex-shrink-0 w-32 snap-start p-4 rounded-[1.8rem] border-2 transition-all relative overflow-hidden flex flex-col items-center text-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-slate-100 hover:border-blue-500/50'}`}>
                           <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
                              {isSelected ? <CheckCircle2 size={16} /> : <ShoppingBag size={14} />}
                           </div>
-                          <p className={`text-[10px] font-black leading-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>{p.meta.price}</p>
-                          <p className={`text-[8px] font-bold mt-1 uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{p.meta.duration}</p>
+                          <p className={`text-[10px] font-black leading-tight break-words ${isSelected ? 'text-white' : 'text-slate-900'}`}>{profileName}</p>
+                          <p className={`text-[8px] font-bold mt-1 uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{String(p['rate-limit'] || p['shared-users'] || '')}</p>
                         </button>
                        );
                      })}
