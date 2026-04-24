@@ -1,28 +1,14 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
-import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
-  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleForceRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const data = await fetchPortalBootstrap(true);
-      setMikrotikProfiles(data.profiles || []);
-    } catch (err) {
-      console.error('Erreur rafraîchissement:', err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const updatePlan = (index: number, updater: (plan: any) => any) => {
     const newPlans = [...settings.plans];
@@ -182,41 +168,6 @@ export const Sidebar = () => {
                   <Sparkles size={12} className="inline mr-1" /> Auto-Badges
                </button>
              </div>
-
-             {mikrotikProfiles.length > 0 && (
-                <div className="mb-6 -mx-6 px-6">
-                   <div className="flex items-center justify-between mb-4 px-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-                        <Signal size={14} strokeWidth={3} /> Vente Directe MikroTik
-                      </p>
-                      <button onClick={handleForceRefresh} disabled={isRefreshing} className="text-slate-400 hover:text-blue-600 transition-all">
-                        <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                      </button>
-                   </div>
-                   
-                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
-                     {mikrotikProfiles
-                      .map(p => ({ ...p, meta: parseProfileLabel(p.name) }))
-                      .map((p) => {
-                       const profileName = String(p?.name || p?.['.id'] || '').trim();
-                       const isSelected = settings.plans.some(plan => plan.profileName === profileName);
-                       return (
-                        <button key={profileName} onClick={() => {
-                             if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== profileName)); return; }
-                             setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName, displayName: profileName, priceLabel: '', durationLabel: '', speedLabel: String(p['rate-limit'] || p['shared-users'] || ''), badge: 'none', displayOrder: settings.plans.length + 1 }]);
-                          }}
-                          className={`flex-shrink-0 w-32 snap-start p-4 rounded-[1.8rem] border-2 transition-all relative overflow-hidden flex flex-col items-center text-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-slate-100 hover:border-blue-500/50'}`}>
-                          <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
-                             {isSelected ? <CheckCircle2 size={16} /> : <ShoppingBag size={14} />}
-                          </div>
-                          <p className={`text-[10px] font-black leading-tight break-words ${isSelected ? 'text-white' : 'text-slate-900'}`}>{profileName}</p>
-                          <p className={`text-[8px] font-bold mt-1 uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{String(p['rate-limit'] || p['shared-users'] || '')}</p>
-                        </button>
-                       );
-                     })}
-                   </div>
-                </div>
-             )}
 
              <div className="space-y-4">
                 {settings.plans.map((p, idx) => (

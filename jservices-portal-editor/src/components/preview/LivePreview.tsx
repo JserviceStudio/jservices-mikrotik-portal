@@ -159,7 +159,10 @@ export const LivePreview = () => {
           </div>
 
           {routerProfiles.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 pr-2 no-scrollbar snap-x snap-mandatory">
+            <div
+              className="flex gap-3 overflow-x-auto pb-2 pr-2 no-scrollbar snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
               {routerProfiles.map((profile: any) => {
                 const profileName = String(profile?.name || profile?.['.id'] || '').trim();
                 const isSelected = selectedProfileNames.has(profileName);
