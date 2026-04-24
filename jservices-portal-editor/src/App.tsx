@@ -35,6 +35,19 @@ const normalizePlan = (offer: any, index: number): PlanConf => ({
   displayOrder: Number.isFinite(Number(offer?.displayOrder)) ? Number(offer.displayOrder) : index + 1,
 });
 
+const normalizePortalUrl = (value: any, fallback: string, disallowedHosts: string[] = []) => {
+  const raw = safeText(value, '').trim();
+  if (!raw) return fallback;
+  try {
+    const parsed = new URL(raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`);
+    const hostname = parsed.hostname.toLowerCase();
+    if (disallowedHosts.some((host) => hostname.includes(host))) return fallback;
+    return parsed.toString();
+  } catch {
+    return fallback;
+  }
+};
+
 const normalizeEditorConfig = (input: any): SettingsSchema | null => {
   if (!input || typeof input !== 'object') return null;
 
@@ -75,8 +88,8 @@ const normalizeEditorConfig = (input: any): SettingsSchema | null => {
         aggregator === 'custom' ? 'Custom' : 'none',
       apiKey: safeText(payment.apiKey, ''),
       clientId: safeText(payment.clientId, ''),
-      gatewayUrl: safeText(payment.gatewayUrl, ''),
-      callbackUrl: safeText(payment.callbackUrl, ''),
+      gatewayUrl: normalizePortalUrl(payment.gatewayUrl, 'https://tpay.mikhmoai.com/buy-ticketmomo', ['maxdospot.com', 'loginm.']),
+      callbackUrl: normalizePortalUrl(payment.callbackUrl, 'https://hook.mikhmoai.com/pay_callback/fedapay/MoailtePro', ['maxdospot.com']),
     },
     features: {
       themeMode: ['auto', 'light', 'dark'].includes(String(features.themeMode || '').toLowerCase())
