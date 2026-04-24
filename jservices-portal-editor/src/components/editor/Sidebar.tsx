@@ -58,12 +58,16 @@ export const Sidebar = () => {
     }));
   };
 
+  const buildPreviewUrl = (plan: any) => {
+    return buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl);
+  };
+
   const handleSaveCloud = async () => {
     setDeploymentStatus('loading');
     try {
       const updatedPlans = settings.plans.map(plan => ({
         ...plan,
-        paymentUrl: buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl)
+        paymentUrl: buildPreviewUrl(plan)
       }));
       const result = await deployToCloud({ ...settings, plans: updatedPlans });
       if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
@@ -287,6 +291,16 @@ export const Sidebar = () => {
                         className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none"
                         placeholder="Clé API / public key"
                       />
+                      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Exemple généré</p>
+                        <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
+                          {buildPreviewUrl({
+                            profileName: '150F-8H',
+                            priceLabel: '150 FCFA',
+                            durationLabel: '8H',
+                          }) || 'Le lien apparaîtra ici quand la clé publique est renseignée.'}
+                        </p>
+                      </div>
                    </div>
                 </div>
              </section>
