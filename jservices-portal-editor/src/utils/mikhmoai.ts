@@ -139,11 +139,11 @@ export function buildPaymentUrl(input: {
   return preserveHotspotTokens(url);
 }
 
-export function buildTiketMomoPaymentUrl(plan: any, apiKey: string): string {
+export function buildTiketMomoPaymentUrl(plan: any, apiKey: string, gatewayUrl?: string): string {
   if (!apiKey || apiKey === 'none') return '';
   return buildPaymentUrl({
     aggregator: 'custom',
-    gatewayUrl: 'https://tpay.mikhmoai.com/buy-ticketmomo',
+    gatewayUrl: gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo',
     apiKey,
     profileName: plan?.profileName || '',
     priceLabel: plan?.priceLabel || '',
