@@ -13,9 +13,6 @@ export const Sidebar = () => {
   const [activeTab, setActiveTab] = useState('branding');
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const paymentEnabled = settings.features.enablePaymentLinks;
-  const selectedProfilesCount = settings.plans.length;
-  const paymentLabel = paymentEnabled ? settings.payment.aggregator || 'Actif' : 'Désactivé';
 
   const handleForceRefresh = async () => {
     setIsRefreshing(true);
@@ -99,48 +96,24 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="flex h-[46vh] w-full flex-col overflow-hidden bg-white shadow-lg z-10 sm:h-[48vh] xl:h-full">
+    <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden">
       <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
-        MikhmoAI Portal Editor Active
+        🛰️ MikhmoAI Engine Active v2.9 (Build Fixed)
       </div>
 
-      <div className="p-5 border-b shrink-0 bg-slate-50/80 space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg font-black uppercase tracking-tighter text-slate-900 leading-none">
-              Portal <span className="text-blue-600">Editor</span>
-            </h1>
-            <p className="mt-1 text-[11px] font-semibold text-slate-500 truncate">
-              {settings.branding.ispName} • {settings.branding.wifiName}
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-              <button onClick={() => exportTemplateZip(settings)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-blue-200 hover:text-blue-600">
-                <Download size={18}/>
-              </button>
-              <button onClick={handleSaveCloud} className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-600 transition-all shadow-lg">
-                  Déployer
-              </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Template</div>
-            <div className="mt-1 truncate text-[11px] font-bold text-slate-900">{settings.template_id}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Profils</div>
-            <div className="mt-1 truncate text-[11px] font-bold text-slate-900">{selectedProfilesCount}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Paiement</div>
-            <div className="mt-1 truncate text-[11px] font-bold text-slate-900">{paymentLabel}</div>
-          </div>
+      <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
+        <h1 className="text-xl font-black flex items-center gap-2 uppercase tracking-tighter text-slate-900">
+          Studio <span className="text-blue-600">Design</span>
+        </h1>
+        <div className="flex gap-2">
+            <button onClick={() => exportTemplateZip(settings)} className="p-2 text-slate-400 hover:text-blue-600"><Download size={18}/></button>
+            <button onClick={handleSaveCloud} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg">
+                Déployer
+            </button>
         </div>
       </div>
 
-      <div className="flex border-b shrink-0 bg-white overflow-x-auto no-scrollbar">
+      <div className="flex border-b shrink-0 bg-white">
         {[
           { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
           { id: 'plans', icon: <Ticket size={16} />, label: 'Forfaits' },
@@ -148,14 +121,14 @@ export const Sidebar = () => {
           { id: 'features', icon: <Settings size={16} />, label: 'Réglages' },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`min-w-[120px] flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+            className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
             {tab.icon}
             <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 no-scrollbar pb-32">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar pb-32">
         {activeTab === 'branding' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">

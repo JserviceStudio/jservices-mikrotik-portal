@@ -186,7 +186,7 @@ function App() {
   const storedToken = typeof window !== 'undefined' ? readPortalEditorToken() : null;
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-white text-slate-900 xl:flex-row">
+    <div className="flex h-screen w-screen overflow-hidden bg-white text-slate-900">
       {bootstrapStatus !== 'idle' && (
         <div className={`absolute right-4 top-4 z-20 max-w-md rounded-2xl border px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-top-2 ${
           bootstrapStatus === 'error'
@@ -205,12 +205,8 @@ function App() {
         API: live.jmoai.net | Session: {sessionToken || storedToken ? 'Active ✅' : 'Manquante ❌'}
       </div>
 
-      <div className="shrink-0 border-b border-slate-200 xl:border-b-0 xl:border-r xl:h-screen">
-        <Sidebar />
-      </div>
-      <div className="min-h-0 flex-1">
-        <LivePreview />
-      </div>
+      <Sidebar />
+      <LivePreview />
     </div>
   );
 }
