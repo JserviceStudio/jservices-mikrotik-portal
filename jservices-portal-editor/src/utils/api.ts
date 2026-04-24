@@ -76,6 +76,22 @@ export const savePortalConfig = async (settings: SettingsSchema, token?: string)
   return payload.data;
 };
 
+export const fetchPortalDeploymentPlan = async (token?: string): Promise<any> => {
+  const url = `${API_BASE_URL}/api/v1/clients/portal-editor/deployment-plan`;
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json', ...buildAuthHeaders(token) },
+  });
+
+  const payload = await response.json();
+  if (!response.ok || !payload?.success) {
+    throw new Error(extractErrorMessage(payload, 'Plan de déploiement indisponible.'));
+  }
+
+  return payload.data;
+};
+
 export const deployToCloud = async (settings: SettingsSchema, token?: string) => {
   try {
     const result = await savePortalConfig(settings, token);

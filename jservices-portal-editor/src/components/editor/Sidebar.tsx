@@ -6,7 +6,7 @@ import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { ImageCropper } from './ImageCropper';
 import { parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
-import { fetchPortalBootstrap } from '../../utils/api';
+import { fetchPortalBootstrap, fetchPortalDeploymentPlan } from '../../utils/api';
 
 const safeText = (value: any, fallback = ''): string => {
   if (value === null || value === undefined) return fallback;
@@ -153,6 +153,23 @@ export const Sidebar = () => {
       const result = await deployToCloud(settings);
       if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
     } catch (err) { setDeploymentStatus('error'); }
+  };
+
+  const handleDownloadDeployment = async () => {
+    try {
+      const plan = await fetchPortalDeploymentPlan();
+      const blob = new Blob([plan.routeros_script || ''], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `mikrotik-portal-${plan.store_slug || 'deployment'}.rsc`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Impossible de générer le script MikroTik.');
+    }
   };
 
   const handleExportZip = () => { exportTemplateZip(settings); };
@@ -542,6 +559,9 @@ export const Sidebar = () => {
                {settings.deploymentStatus === 'loading' ? <Loader2 size={18} className="animate-spin" /> : settings.deploymentStatus === 'success' ? <Check size={18} /> : <Cloud size={18} />} {settings.deploymentStatus === 'loading' ? 'Envoi...' : 'Cloud'}
             </button>
          </div>
+         <button onClick={handleDownloadDeployment} className="w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+            <Signal size={18} /> MikroTik
+         </button>
          {settings.publicUrl && (
             <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 animate-in fade-in">
                <div className="flex bg-white border border-emerald-200 rounded-lg overflow-hidden mb-2">
