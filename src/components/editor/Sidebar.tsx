@@ -6,7 +6,7 @@ import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '.
 import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
-  const { settings, mikrotikProfiles, setMikrotikProfiles, updateBranding, updatePayment, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, mikrotikProfiles, setMikrotikProfiles, updateBranding, setPlans, setDeploymentStatus, setPublicUrl, updatePayment } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -25,7 +25,7 @@ export const Sidebar = () => {
   const handleSaveCloud = async () => {
     setDeploymentStatus('loading');
     try {
-      const result = await deployToCloud(settings);
+      const result = await deployToCloud({ ...settings, plans: syncPaymentLinks(settings.plans) });
       if (result.success) {
         setPublicUrl(result.url);
         setDeploymentStatus('success');
@@ -78,9 +78,8 @@ export const Sidebar = () => {
 
   return (
     <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden">
-      {/* Témoin Visuel */}
       <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
-        🛰️ MikhmoAI Engine Active v2.6
+        🛰️ MikhmoAI Engine Active v2.7
       </div>
 
       <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
@@ -92,7 +91,6 @@ export const Sidebar = () => {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b shrink-0 bg-white">
         {[
           { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
@@ -131,7 +129,6 @@ export const Sidebar = () => {
 
         {activeTab === 'plans' && (
           <div className="space-y-8">
-             {/* 🛰️ Carousel des Profils MikroTik */}
              {mikrotikProfiles.length > 0 && (
                 <div className="mb-10 -mx-6 px-6">
                    <div className="flex items-center justify-between mb-4 px-1">
@@ -154,7 +151,7 @@ export const Sidebar = () => {
                              if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== p.name)); return; }
                              const meta = p.meta;
                              const newPlan: PlanConf = { id: Math.random().toString(36).slice(2, 11), profileName: p.name, displayName: `${meta.price} / ${meta.duration}`, priceLabel: meta.price, durationLabel: meta.duration, speedLabel: p['rate-limit'] || '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 };
-                             setPlans(syncPaymentLinks([...settings.plans, { ...newPlan, paymentUrl: buildPlanPaymentUrl(newPlan) }]));
+                             setPlans(syncPaymentLinks([...settings.plans, newPlan]));
                           }}
                           className={`flex-shrink-0 w-36 snap-start p-5 rounded-[2rem] border-2 transition-all relative overflow-hidden flex flex-col items-center text-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]' : 'bg-white border-slate-100 hover:border-blue-500/50'}`}>
                           <div className={`w-10 h-10 rounded-2xl mb-3 flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-blue-50/50 text-blue-600'}`}>
