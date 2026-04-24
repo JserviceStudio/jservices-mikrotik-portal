@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon, Copy, EyeOff } from 'lucide-react';
+import { Download, Trash2, Plus, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Lock as LockIcon, Copy, EyeOff } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
@@ -10,7 +10,6 @@ import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
-  const [activeTab, setActiveTab] = useState('branding');
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const paymentEnabled = settings.features.enablePaymentLinks;
@@ -140,23 +139,7 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      <div className="flex border-b shrink-0 bg-white overflow-x-auto no-scrollbar">
-        {[
-          { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
-          { id: 'plans', icon: <Ticket size={16} />, label: 'Forfaits' },
-          { id: 'payment', icon: <CreditCard size={16} />, label: 'Paiement' },
-          { id: 'features', icon: <Settings size={16} />, label: 'Réglages' },
-        ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`min-w-[120px] flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-            {tab.icon}
-            <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 no-scrollbar pb-32">
-        {activeTab === 'branding' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Template de Base</h3>
@@ -237,9 +220,7 @@ export const Sidebar = () => {
                 {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={(cropped) => { updateBranding({ logoPreset: 'none', logoUrl: cropped }); setImageToCrop(null); }} onCancel={() => setImageToCrop(null)} />}
              </section>
           </div>
-        )}
 
-        {activeTab === 'plans' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              {mikrotikProfiles.length > 0 && (
                 <div className="mb-10 -mx-6 px-6">
@@ -331,9 +312,7 @@ export const Sidebar = () => {
                 </button>
              </div>
           </div>
-        )}
 
-        {activeTab === 'payment' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -443,9 +422,7 @@ export const Sidebar = () => {
                 </div>
              </section>
           </div>
-        )}
 
-        {activeTab === 'features' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Options du Template</h3>
@@ -500,7 +477,6 @@ export const Sidebar = () => {
                 )}
              </section>
           </div>
-        )}
       </div>
     </div>
   );
