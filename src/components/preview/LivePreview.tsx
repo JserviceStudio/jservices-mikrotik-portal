@@ -103,8 +103,8 @@ export const LivePreview = () => {
   }, [settings]);
 
   return (
-    <div className="flex-1 min-h-0 bg-slate-100 h-full overflow-y-auto w-full">
-      <div className="min-h-full p-4 sm:p-6 xl:p-8">
+    <div className="flex-1 bg-slate-100 h-screen overflow-y-auto w-full">
+      <div className="min-h-full p-6 xl:p-8">
         <div className="mb-6 flex flex-col gap-2">
           <h2 className="text-lg font-bold text-slate-900">Aperçu en direct</h2>
           <p className="text-sm text-slate-500">Vue mobile dans le mockup et rendu desktop côte à côte.</p>
@@ -120,7 +120,7 @@ export const LivePreview = () => {
             </div>
 
             <div className="flex justify-center">
-              <div className="relative mx-auto border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[800px] w-[320px] sm:w-[380px] max-w-full shadow-2xl">
+              <div className="relative mx-auto border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[800px] w-[380px] max-w-full shadow-2xl">
                 <div className="w-[148px] h-[34px] bg-gray-800 absolute top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2"></div>
                 <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[124px] rounded-l-lg"></div>
                 <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
