@@ -1,26 +1,36 @@
-import { useState, type ReactNode, useEffect } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Phone, Cloud, Check, Loader2, Copy, Globe, ExternalLink, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, Phone, Layers, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, Sun, Moon, Monitor, ShieldCheck, X, Signal, RefreshCw, CheckCircle2, ShoppingBag, Globe, ExternalLink, Loader2, Cloud } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { ImageCropper } from './ImageCropper';
+import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
+import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
-  const { settings, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const selectedTemplate = TEMPLATE_DEFINITIONS[settings.template_id];
 
-  const updatePlan = (index: number, updater: (plan: typeof settings.plans[number]) => typeof settings.plans[number]) => {
+  const handleForceRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await fetchPortalBootstrap(true);
+      setMikrotikProfiles(data.profiles || []);
+    } catch (err) {
+      console.error('Erreur rafraîchissement:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const updatePlan = (index: number, updater: (plan: any) => any) => {
     const newPlans = [...settings.plans];
     newPlans[index] = updater(newPlans[index]);
-    setPlans(
-      newPlans.map((plan, idx) => ({
-        ...plan,
-        displayOrder: idx + 1,
-      })),
-    );
+    setPlans(newPlans.map((p, i) => ({ ...p, displayOrder: i + 1 })));
   };
 
   const movePlan = (index: number, direction: 'up' | 'down') => {
@@ -28,65 +38,59 @@ export const Sidebar = () => {
     if (targetIndex < 0 || targetIndex >= settings.plans.length) return;
     const newPlans = [...settings.plans];
     [newPlans[index], newPlans[targetIndex]] = [newPlans[targetIndex], newPlans[index]];
-    setPlans(
-      newPlans.map((plan, idx) => ({
-        ...plan,
-        displayOrder: idx + 1,
-      })),
-    );
+    setPlans(newPlans.map((p, i) => ({ ...p, displayOrder: i + 1 })));
   };
 
   const autoAssignBadges = () => {
+    if (settings.plans.length === 0) return;
     const rankByPrice = [...settings.plans]
-      .map((plan) => ({
-        id: plan.id,
-        amount: Number.parseInt(plan.priceLabel.replace(/\D/g, ''), 10) || 0,
-      }))
+      .map((plan) => {
+        const { numericPrice } = parseProfileLabel(plan.profileName);
+        return { id: plan.id, amount: numericPrice || Number.parseInt(plan.priceLabel.replace(/\D/g, ''), 10) || 0 };
+      })
       .sort((a, b) => a.amount - b.amount);
-
+    
     const cheapestId = rankByPrice[0]?.id;
     const priciestId = rankByPrice[rankByPrice.length - 1]?.id;
     const middleId = rankByPrice[Math.floor(rankByPrice.length / 2)]?.id;
-
-    setPlans(
-      settings.plans.map((plan, idx) => ({
-        ...plan,
-        badge:
-          plan.id === priciestId ? 'vip' :
-          plan.id === cheapestId ? 'eco' :
-          plan.id === middleId || idx === 1 ? 'popular' :
-          'none',
-      })),
-    );
+    
+    setPlans(settings.plans.map((plan) => {
+        let badge: any = 'none';
+        if (plan.id === priciestId && settings.plans.length >= 2) badge = 'vip';
+        else if (plan.id === cheapestId && settings.plans.length >= 2) badge = 'eco';
+        else if (plan.id === middleId && settings.plans.length >= 3) badge = 'popular';
+        return { ...plan, badge };
+    }));
   };
 
   const handleSaveCloud = async () => {
     setDeploymentStatus('loading');
     try {
-      const result = await deployToCloud(settings);
-      if (result.success) {
-        setPublicUrl(result.url);
-        setDeploymentStatus('success');
-      } else {
-        setDeploymentStatus('error');
-      }
-    } catch (err) {
-      setDeploymentStatus('error');
-    }
-  };
-
-  const handleExportZip = () => {
-    exportTemplateZip(settings);
+      const updatedPlans = settings.plans.map(plan => ({
+        ...plan,
+        paymentUrl: buildTiketMomoPaymentUrl(plan, settings.payment.apiKey)
+      }));
+      const result = await deployToCloud({ ...settings, plans: updatedPlans });
+      if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
+    } catch (err) { setDeploymentStatus('error'); }
   };
 
   return (
     <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b shrink-0">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Settings className="text-primary" /> Éditeur Portail
+      <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
+        🛰️ MikhmoAI Engine Active v2.9.4 (Elite Edition)
+      </div>
+
+      <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
+        <h1 className="text-xl font-bold flex items-center gap-2 text-slate-900">
+          <Settings className="text-blue-600" /> Éditeur Portail
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Personnalisez votre Hotspot WiFi</p>
+        <div className="flex gap-2">
+            <button onClick={() => exportTemplateZip(settings)} className="p-2 text-slate-400 hover:text-blue-600"><Download size={18}/></button>
+            <button onClick={handleSaveCloud} disabled={settings.deploymentStatus === 'loading'} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg disabled:opacity-50">
+                {settings.deploymentStatus === 'loading' ? 'Envoi...' : 'Déployer'}
+            </button>
+        </div>
       </div>
 
       {/* Tabs Menu */}
@@ -94,254 +98,221 @@ export const Sidebar = () => {
         <TabBtn icon={<Palette size={16}/>} label="Design" active={activeTab==='branding'} onClick={() => setActiveTab('branding')} />
         <TabBtn icon={<Ticket size={16}/>} label="Forfaits" active={activeTab==='plans'} onClick={() => setActiveTab('plans')} />
         <TabBtn icon={<CreditCard size={16}/>} label="Paiement" active={activeTab==='payment'} onClick={() => setActiveTab('payment')} />
+        <TabBtn icon={<ShieldCheck size={16}/>} label="Réglages" active={activeTab==='features'} onClick={() => setActiveTab('features')} />
       </div>
 
-      {/* Forms Area */}
-      <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30 no-scrollbar pb-32">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar pb-32 bg-slate-50/30">
         {activeTab === 'branding' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
-            <h2 className="font-semibold text-lg border-b pb-2 flex items-center gap-2">
-               <Palette size={18} className="text-primary"/> Identité Visuelle
-            </h2>
-            <div className="space-y-4 pt-2">
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Template de Base</label>
-                  <div className="grid grid-cols-2 gap-3">
-                     {Object.values(TEMPLATE_DEFINITIONS).map((template) => (
-                        <button
-                          key={template.id}
-                          type="button"
-                          onClick={() => setTemplateId(template.id)}
-                          className={`rounded-2xl border p-3 text-left transition-all ${
-                            settings.template_id === template.id
-                              ? 'border-primary bg-primary/5 shadow-sm'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
-                          }`}
-                        >
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+             <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Identité Visuelle</h3>
+                <div>
+                   <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Template de Base</label>
+                   <div className="grid grid-cols-2 gap-3">
+                      {Object.values(TEMPLATE_DEFINITIONS).map((t) => (
+                        <button key={t.id} onClick={() => setTemplateId(t.id)}
+                          className={`rounded-2xl border p-3 text-left transition-all ${settings.template_id === t.id ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                           <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                            <Layers size={16} className={settings.template_id === template.id ? 'text-primary' : 'text-slate-400'} />
-                            {template.label}
+                            <Layers size={16} className={settings.template_id === t.id ? 'text-blue-600' : 'text-slate-400'} />
+                            {t.label}
                           </div>
-                          <p className="mt-2 text-xs leading-5 text-slate-500">
-                            {template.description}
-                          </p>
+                          <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t.description}</p>
                         </button>
+                      ))}
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Nom du WiFi</label>
+                      <input type="text" value={settings.branding.wifiName} onChange={(e) => updateBranding({ wifiName: e.target.value })}
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none" />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Enseigne (ISP)</label>
+                      <input type="text" value={settings.branding.ispName} onChange={(e) => updateBranding({ ispName: e.target.value })}
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none" />
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Couleur 1</label>
+                      <input type="color" value={settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Couleur 2</label>
+                      <input type="color" value={settings.branding.secondaryColor} onChange={(e) => updateBranding({ secondaryColor: e.target.value })} className="h-10 w-full p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" />
+                   </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Langue</label>
+                   <div className="flex gap-2">
+                     {[{v:'fr', f:'🇫🇷'}, {v:'en', f:'🇬🇧'}].map(l => (
+                       <button key={l.v} onClick={() => updateBranding({ language: l.v as any })} className={`px-4 py-2 border rounded-xl text-xl ${settings.branding.language === l.v ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>{l.f}</button>
                      ))}
-                  </div>
-               </div>
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Langue du Template</label>
-                  <div className="flex gap-3">
-                    {[
-                      { value: 'fr', flag: '🇫🇷' },
-                      { value: 'en', flag: '🇬🇧' },
-                    ].map((language) => (
-                      <button
-                        key={language.value}
-                        type="button"
-                        onClick={() => updateBranding({ language: language.value as 'fr' | 'en' })}
-                        className={`flex h-12 w-12 items-center justify-center rounded-xl border text-2xl transition-all ${
-                          settings.branding.language === language.value
-                            ? 'border-primary bg-primary/10 shadow-sm'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
-                        }`}
-                        title={language.value}
-                      >
-                        <span aria-hidden="true">{language.flag}</span>
-                      </button>
-                    ))}
-                  </div>
-               </div>
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nom du Service (ISP)</label>
-                  <input type="text" value={settings.branding.ispName} onChange={(e) => updateBranding({ ispName: e.target.value })} className="w-full border-slate-200 border p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="ex: J+Services WiFi" />
-               </div>
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nom du Réseau WiFi</label>
-                  <input type="text" value={settings.branding.wifiName} onChange={(e) => updateBranding({ wifiName: e.target.value })} className="w-full border-slate-200 border p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="ex: @JServices_Gratuit" />
-               </div>
-               
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Style de Carte</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => updateBranding({ cardStyle: 'glass' })} className={`p-2 border rounded-lg text-xs font-bold transition-all ${settings.branding.cardStyle === 'glass' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>Modern Glass</button>
-                    <button onClick={() => updateBranding({ cardStyle: 'ticket' })} className={`p-2 border rounded-lg text-xs font-bold transition-all ${settings.branding.cardStyle === 'ticket' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>Classic Ticket</button>
-                  </div>
-               </div>
-
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Logo</label>
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <div onClick={() => updateBranding({ logoPreset: 'jservices', logoUrl: '' })} className={`shrink-0 w-12 h-12 border-2 rounded-lg cursor-pointer overflow-hidden flex items-center justify-center bg-white ${settings.branding.logoPreset === 'jservices' ? 'border-primary' : 'border-slate-100 hover:border-slate-200'}`}>
-                      <img src="/portal-editor/assets/presets/jservices.png" className="max-w-[80%] max-h-[80%] object-contain" />
-                    </div>
-                    <div onClick={() => updateBranding({ logoPreset: 'jconnect', logoUrl: '' })} className={`shrink-0 w-12 h-12 border-2 rounded-lg cursor-pointer overflow-hidden flex items-center justify-center bg-[#0047AB] ${settings.branding.logoPreset === 'jconnect' ? 'border-primary' : 'border-slate-100 hover:border-slate-200'}`}>
-                      <img src="/portal-editor/assets/presets/jconnect.png" className="max-w-[80%] max-h-[80%] object-contain" />
-                    </div>
-                    <div 
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file'; input.accept = 'image/*';
-                        input.onchange = (e: any) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (re) => setImageToCrop(re.target?.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        };
-                        input.click();
-                      }}
-                      className="shrink-0 w-12 h-12 border-2 border-dashed rounded-lg cursor-pointer flex flex-col items-center justify-center text-[8px] font-bold text-slate-400 border-slate-100 hover:border-slate-200"
-                    >
-                      <Download size={14} className="mb-0.5 rotate-180" /> UPLOAD
-                    </div>
-                  </div>
-                  {imageToCrop && <ImageCropper image={imageToCrop} onCropComplete={(cropped) => { updateBranding({ logoPreset: 'none', logoUrl: cropped }); setImageToCrop(null); }} onCancel={() => setImageToCrop(null)} />}
-               </div>
-
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Couleur 1</label>
-                    <div className="flex gap-2">
-                       <input type="color" value={settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="h-10 w-12 p-1 bg-white border border-slate-200 rounded-lg cursor-pointer" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Couleur 2</label>
-                    <div className="flex gap-2">
-                       <input type="color" value={settings.branding.secondaryColor} onChange={(e) => updateBranding({ secondaryColor: e.target.value })} className="h-10 w-12 p-1 bg-white border border-slate-200 rounded-lg cursor-pointer" />
-                    </div>
-                  </div>
-               </div>
-            </div>
-
-            <h2 className="font-semibold text-lg border-b pb-2 mt-8 flex items-center gap-2">
-               <Phone size={18} className="text-primary"/> Contact & Aide
-            </h2>
-            <div className="space-y-4 pt-2">
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Téléphone / Support</label>
-                  <input type="text" value={settings.contact.phone} onChange={(e) => updateContact({ phone: e.target.value })} className="w-full border-slate-200 border p-2.5 rounded-lg text-sm" />
-               </div>
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">WhatsApp Support</label>
-                  <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full border-slate-200 border p-2.5 rounded-lg text-sm" placeholder="ex: 229XXXXXXXX" />
-               </div>
-               <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Adresse Support</label>
-                  <textarea value={settings.contact.address} onChange={(e) => updateContact({ address: e.target.value })} className="min-h-[88px] w-full resize-none border-slate-200 border p-3 rounded-lg text-sm" />
-               </div>
-
-               <div className="space-y-2 mb-4">
-                  <label className="text-xs font-bold text-slate-500 uppercase block mb-2">Thème Portail</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['auto', 'light', 'dark'] as const).map((m) => (
-                      <button key={m} onClick={() => updateFeatures({ themeMode: m })} className={`flex flex-col items-center gap-2 p-3 border rounded-xl transition-all ${settings.features.themeMode === m ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 bg-white'}`}>
-                        {m === 'auto' ? <Monitor size={18} /> : m === 'light' ? <Sun size={18} /> : <Moon size={18} />}
-                        <span className="text-[9px] uppercase">{m}</span>
-                      </button>
-                    ))}
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-1 gap-3">
-                  <FeatureToggle checked={settings.features.enableQrScanner} icon={<QrCode size={16}/>} label="Module QR Scanner" onChange={(v) => updateFeatures({ enableQrScanner: v })} />
-                  <FeatureToggle checked={settings.features.enableTrial} icon={<FlaskConical size={16}/>} label="Ticket d'essai" onChange={(v) => updateFeatures({ enableTrial: v })} />
-               </div>
-
-               <div className="mt-8 pt-6 border-t border-slate-100">
-                  <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 mb-4"><ShieldCheck size={18} className="text-primary" /> ARCEP KYC</h3>
-                  <div className="space-y-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">Activer KYC</span>
-                        <input type="checkbox" checked={settings.features.kyc.enabled} onChange={(e) => updateKyc({ enabled: e.target.checked })} />
-                     </div>
-                     {settings.features.kyc.enabled && (
-                        <div className="space-y-3 animate-in fade-in">
-                           <input type="text" value={settings.features.kyc.countryCode} onChange={(e) => updateKyc({ countryCode: e.target.value })} className="w-full border-slate-200 border p-2.5 rounded-xl text-sm" placeholder="+229" />
-                           <input type="number" value={settings.features.kyc.phoneLength} onChange={(e) => updateKyc({ phoneLength: parseInt(e.target.value) || 0 })} className="w-full border-slate-200 border p-2.5 rounded-xl text-sm" placeholder="Longueur tel" />
-                        </div>
-                     )}
-                  </div>
-               </div>
-            </div>
+                   </div>
+                </div>
+             </section>
           </div>
         )}
 
         {activeTab === 'plans' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
              <div className="flex items-center justify-between border-b pb-2">
-               <h2 className="font-semibold text-lg">Configurer les Tarifs</h2>
-               <button type="button" onClick={autoAssignBadges} className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100">
-                 <Sparkles size={14} /> Auto-Badges
+               <h2 className="font-semibold text-lg uppercase tracking-tight">Gestion des Tarifs</h2>
+               <button onClick={autoAssignBadges} className="px-3 py-1.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-500/10 hover:bg-amber-500 hover:text-white transition-all">
+                  <Sparkles size={12} className="inline mr-1" /> Auto-Badges
                </button>
              </div>
-             {settings.plans.map((p, idx) => (
-                <div key={p.id} className="group border p-4 rounded-xl bg-white relative transition-all hover:border-primary/30">
-                   <button onClick={() => setPlans(settings.plans.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>
-                   <div className="font-semibold text-xs uppercase text-primary/60 mb-3 flex items-center gap-2">
-                     <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">{idx + 1}</div> Forfait
-                     <div className="ml-auto flex items-center gap-1">
-                        <button onClick={() => movePlan(idx, 'up')} disabled={idx === 0} className="p-1 text-slate-400 disabled:opacity-30"><ChevronUp size={14} /></button>
-                        <button onClick={() => movePlan(idx, 'down')} disabled={idx === settings.plans.length - 1} className="p-1 text-slate-400 disabled:opacity-30"><ChevronDown size={14} /></button>
-                     </div>
+
+             {/* 🛰️ Carousel des Profils MikroTik (MikhmoAI UI/UX) */}
+             {mikrotikProfiles.length > 0 && (
+                <div className="mb-6 -mx-6 px-6">
+                   <div className="flex items-center justify-between mb-4 px-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
+                        <Signal size={14} strokeWidth={3} /> Vente Directe MikroTik
+                      </p>
+                      <button onClick={handleForceRefresh} disabled={isRefreshing} className="text-slate-400 hover:text-blue-600 transition-all">
+                        <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                      </button>
                    </div>
-                   <div className="space-y-3">
-                     <input type="text" placeholder="Profil MikroTik" className="w-full border-b border-slate-100 p-1 text-sm font-medium" value={p.profileName} onChange={(e) => updatePlan(idx, (plan) => ({ ...plan, profileName: e.target.value }))} />
-                     <input type="text" placeholder="Nom Affiché" className="w-full border-b border-slate-100 p-1 text-sm font-bold text-slate-700" value={p.displayName} onChange={(e) => updatePlan(idx, (plan) => ({ ...plan, displayName: e.target.value }))} />
-                     <input type="text" placeholder="Prix" className="w-full border-b border-slate-100 p-1 text-sm" value={p.priceLabel} onChange={(e) => updatePlan(idx, (plan) => ({ ...plan, priceLabel: e.target.value }))} />
-                     <div className="flex gap-4">
-                        <input type="text" placeholder="Vitesse" className="flex-1 border-b border-slate-100 p-1 text-xs" value={p.speedLabel} onChange={(e) => updatePlan(idx, (plan) => ({ ...plan, speedLabel: e.target.value }))} />
-                        <input type="text" placeholder="Durée" className="flex-1 border-b border-slate-100 p-1 text-xs" value={p.durationLabel} onChange={(e) => updatePlan(idx, (plan) => ({ ...plan, durationLabel: e.target.value }))} />
-                     </div>
+                   
+                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
+                     {mikrotikProfiles
+                      .map(p => ({ ...p, meta: parseProfileLabel(p.name) }))
+                      .filter(p => p.meta.isSaleable)
+                      .map((p) => {
+                       const isSelected = settings.plans.some(plan => plan.profileName === p.name);
+                       return (
+                        <button key={p.name} onClick={() => {
+                             if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== p.name)); return; }
+                             const meta = p.meta;
+                             setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: p.name, displayName: `${meta.price} / ${meta.duration}`, priceLabel: meta.price, durationLabel: meta.duration, speedLabel: p['rate-limit'] || '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }]);
+                          }}
+                          className={`flex-shrink-0 w-32 snap-start p-4 rounded-[1.8rem] border-2 transition-all relative overflow-hidden flex flex-col items-center text-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-slate-100 hover:border-blue-500/50'}`}>
+                          <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
+                             {isSelected ? <CheckCircle2 size={16} /> : <ShoppingBag size={14} />}
+                          </div>
+                          <p className={`text-[10px] font-black leading-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>{p.meta.price}</p>
+                          <p className={`text-[8px] font-bold mt-1 uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{p.meta.duration}</p>
+                        </button>
+                       );
+                     })}
                    </div>
                 </div>
-             ))}
-             <button onClick={() => setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: '1H', displayName: 'Nouveau', priceLabel: '100 FCFA', durationLabel: '1H', speedLabel: '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }])} className="w-full border-2 border-dashed border-slate-200 text-slate-400 font-bold py-4 rounded-xl hover:border-primary/50 flex items-center justify-center gap-2"><Plus size={18} /> Ajouter</button>
+             )}
+
+             <div className="space-y-4">
+                {settings.plans.map((p, idx) => (
+                  <div key={p.id} className="p-5 bg-white border border-slate-100 rounded-2xl relative group transition-all hover:shadow-md">
+                     <div className="flex justify-between items-start mb-4">
+                        <div className="space-y-1">
+                           <h4 className="text-sm font-black uppercase text-slate-800">{p.displayName}</h4>
+                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                              Profil: {cleanProfileName(p.profileName)}
+                           </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => movePlan(idx, 'up')} disabled={idx === 0} className="p-1 text-slate-300 disabled:opacity-20"><ChevronUp size={14}/></button>
+                            <button onClick={() => movePlan(idx, 'down')} disabled={idx === settings.plans.length - 1} className="p-1 text-slate-300 disabled:opacity-20"><ChevronDown size={14}/></button>
+                            <button onClick={() => setPlans(settings.plans.filter(pl => pl.id !== p.id))} className="p-1 text-slate-300 hover:text-rose-600 ml-1"><Trash2 size={16}/></button>
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-3">
+                        <input type="text" value={p.displayName} onChange={(e) => updatePlan(idx, pl => ({ ...pl, displayName: e.target.value }))} className="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none" placeholder="Nom" />
+                        <select value={p.badge} onChange={(e) => updatePlan(idx, pl => ({ ...pl, badge: e.target.value as any }))} className="p-2 bg-slate-50 rounded-lg text-xs font-bold outline-none border-none">
+                            <option value="none">Standard</option>
+                            <option value="eco">Économique</option>
+                            <option value="popular">Populaire</option>
+                            <option value="vip">V.I.P</option>
+                        </select>
+                     </div>
+                  </div>
+                ))}
+                <button onClick={() => setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: '1H', displayName: 'Nouveau', priceLabel: '100 FCFA', durationLabel: '1H', speedLabel: '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }])} 
+                  className="w-full border-2 border-dashed border-slate-200 py-4 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2">
+                    <Plus size={14} /> Ajouter manuellement
+                </button>
+             </div>
           </div>
         )}
 
         {activeTab === 'payment' && (
-          <div className="space-y-6">
-             <h2 className="font-semibold text-lg border-b pb-2 flex items-center gap-2"><CreditCard size={18} className="text-primary"/> Paiement</h2>
-             <div className="space-y-4">
-                <select className="w-full border border-slate-200 p-2.5 rounded-lg text-sm" value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}>
-                  <option value="none">Désactivé</option>
-                  <option value="FedaPay">FedaPay</option>
-                  <option value="KKiaPay">KKiaPay</option>
-                </select>
-                <input type="text" className="w-full border border-slate-200 p-2.5 rounded-lg text-sm" placeholder="Clé API Publique" value={settings.payment.apiKey} onChange={(e) => updatePayment({ apiKey: e.target.value })} />
-             </div>
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+             <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Passerelle de Paiement</h3>
+                <div className="space-y-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Agrégateur</label>
+                      <select value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none">
+                        <option value="none">Désactivé</option>
+                        <option value="FedaPay">FedaPay</option>
+                        <option value="KKiaPay">KKiaPay</option>
+                        <option value="Cinpay">Cinpay</option>
+                      </select>
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Clé API Publique</label>
+                      <input type="text" value={settings.payment.apiKey} onChange={(e) => updatePayment({ apiKey: e.target.value })}
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none" placeholder="pk_live_..." />
+                   </div>
+                </div>
+             </section>
           </div>
         )}
-      </div>
 
-      <div className="p-6 border-t bg-white shrink-0 shadow-lg flex gap-4">
-          <button onClick={handleExportZip} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-             <Download size={18} /> Télécharger ZIP
-          </button>
-          <button onClick={handleSaveCloud} disabled={settings.deploymentStatus === 'loading'} className="flex-1 bg-primary hover:bg-primary/90 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-50">
-             {settings.deploymentStatus === 'loading' ? <Loader2 size={18} className="animate-spin" /> : <Cloud size={18} />}
-             Déployer Cloud
-          </button>
+        {activeTab === 'features' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
+             <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Réglages Avancés</h3>
+                <div className="grid grid-cols-1 gap-3">
+                    <FeatureToggle checked={settings.features.enableQrScanner} icon={<QrCode size={16}/>} label="Scanner QR Code" onChange={(v) => updateFeatures({ enableQrScanner: v })} />
+                    <FeatureToggle checked={settings.features.enableTrial} icon={<FlaskConical size={16}/>} label="Bouton Essai Gratuit" onChange={(v) => updateFeatures({ enableTrial: v })} />
+                </div>
+                
+                <div className="pt-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-xs font-black uppercase text-slate-800 flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> ARCEP KYC</h3>
+                       <input type="checkbox" checked={settings.features.kyc.enabled} onChange={(e) => updateKyc({ enabled: e.target.checked })} />
+                    </div>
+                    {settings.features.kyc.enabled && (
+                        <div className="space-y-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in zoom-in-95">
+                           <input type="text" value={settings.features.kyc.countryCode} onChange={(e) => updateKyc({ countryCode: e.target.value })} className="w-full p-2 border border-slate-100 rounded-lg text-xs" placeholder="Code pays (+229)" />
+                           <input type="number" value={settings.features.kyc.phoneLength} onChange={(e) => updateKyc({ phoneLength: parseInt(e.target.value) || 0 })} className="w-full p-2 border border-slate-100 rounded-lg text-xs" placeholder="Longueur tel" />
+                        </div>
+                    )}
+                </div>
+             </section>
+             
+             <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Contact Support</h3>
+                <div className="space-y-4">
+                   <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="WhatsApp (229...)" />
+                   <textarea value={settings.contact.address} onChange={(e) => updateContact({ address: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm min-h-[100px] resize-none" placeholder="Adresse" />
+                </div>
+             </section>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 const TabBtn = ({ icon, label, active, onClick }: { icon: ReactNode, label: string, active: boolean, onClick: () => void }) => (
-  <button onClick={onClick} className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${active ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-400'}`}>
+  <button onClick={onClick} className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${active ? 'border-blue-600 text-blue-600 bg-blue-50/20' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
     {icon}
     <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 
 const FeatureToggle = ({ checked, icon, label, onChange }: { checked: boolean, icon: ReactNode, label: string, onChange: (v: boolean) => void }) => (
-  <label className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all border border-transparent hover:border-slate-200">
+  <label className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
     <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
-    <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all shadow-inner relative"></div>
+    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>
     <span className="text-slate-500">{icon}</span>
-    <span className="text-sm font-medium text-slate-700">{label}</span>
+    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">{label}</span>
   </label>
 );
