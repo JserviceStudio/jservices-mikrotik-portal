@@ -9,6 +9,18 @@ import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '.
 export const Sidebar = () => {
   const { settings, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
+  const [copyState, setCopyState] = useState<'idle' | 'hook' | 'gateway'>('idle');
+
+  const copyText = async (value: string, target: 'hook' | 'gateway') => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyState(target);
+      window.setTimeout(() => setCopyState('idle'), 1200);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
 
   const updatePlan = (index: number, updater: (plan: any) => any) => {
     const newPlans = [...settings.plans];
@@ -51,7 +63,7 @@ export const Sidebar = () => {
     try {
       const updatedPlans = settings.plans.map(plan => ({
         ...plan,
-        paymentUrl: buildTiketMomoPaymentUrl(plan, settings.payment.apiKey)
+        paymentUrl: buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl)
       }));
       const result = await deployToCloud({ ...settings, plans: updatedPlans });
       if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
@@ -208,16 +220,74 @@ export const Sidebar = () => {
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Passerelle de Paiement</h3>
-                <div className="space-y-4">
-                   <select value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}
-                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none">
-                     <option value="none">Désactivé</option>
-                     <option value="FedaPay">FedaPay</option>
-                     <option value="KKiaPay">KKiaPay</option>
-                     <option value="Cinpay">Cinpay</option>
-                   </select>
-                   <input type="text" value={settings.payment.apiKey} onChange={(e) => updatePayment({ apiKey: e.target.value })}
-                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none" placeholder="Clé API Publique" />
+                <div className="grid gap-4 lg:grid-cols-2">
+                   <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Hook de paiement</p>
+                          <p className="text-xs text-slate-500">À coller dans FedaPay ou ton agrégateur.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyText(settings.payment.callbackUrl || '', 'hook')}
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-blue-500 hover:text-blue-600"
+                        >
+                          {copyState === 'hook' ? 'Copié' : 'Copier'}
+                        </button>
+                      </div>
+                      <input
+                        type="url"
+                        value={settings.payment.callbackUrl || ''}
+                        onChange={(e) => updatePayment({ callbackUrl: e.target.value })}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] outline-none"
+                        placeholder="https://hook.mikhmoai.com/pay_callback/..."
+                      />
+                   </div>
+
+                   <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lien de paiement manuel</p>
+                          <p className="text-xs text-slate-500">Modifiable à la main puis copiable.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyText(settings.payment.gatewayUrl || '', 'gateway')}
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-blue-500 hover:text-blue-600"
+                        >
+                          {copyState === 'gateway' ? 'Copié' : 'Copier'}
+                        </button>
+                      </div>
+                      <input
+                        type="url"
+                        value={settings.payment.gatewayUrl || ''}
+                        onChange={(e) => updatePayment({ gatewayUrl: e.target.value })}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] outline-none"
+                        placeholder="https://tpay.mikhmoai.com/buy-ticketmomo"
+                      />
+                   </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                   <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <select value={settings.payment.aggregator} onChange={(e) => updatePayment({ aggregator: e.target.value as any })}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none">
+                        <option value="none">Désactivé</option>
+                        <option value="FedaPay">FedaPay</option>
+                        <option value="KKiaPay">KKiaPay</option>
+                        <option value="Cinay">Cinay</option>
+                        <option value="Custom">Custom</option>
+                      </select>
+                   </div>
+                   <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <input
+                        type="text"
+                        value={settings.payment.apiKey}
+                        onChange={(e) => updatePayment({ apiKey: e.target.value })}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none"
+                        placeholder="Clé API / public key"
+                      />
+                   </div>
                 </div>
              </section>
           </div>
