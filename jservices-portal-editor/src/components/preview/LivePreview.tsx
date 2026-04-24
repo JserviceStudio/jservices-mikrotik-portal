@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ejs from 'ejs';
+import { CheckCircle2, ChevronRight, ShoppingBag, Signal, Sparkles } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { getTemplateDefinition, getTemplateTexts } from '../../core/templates';
 
@@ -66,7 +67,35 @@ const buildPreviewDocument = (html: string, mode: 'mobile' | 'desktop') => {
 
 export const LivePreview = () => {
   const settings = useStore((state) => state.settings);
+  const mikrotikProfiles = useStore((state) => state.mikrotikProfiles);
+  const setPlans = useStore((state) => state.setPlans);
   const [htmlContent, setHtmlContent] = useState({ mobile: '', desktop: '' });
+  const routerProfiles = mikrotikProfiles;
+  const selectedProfileNames = new Set(settings.plans.map((plan) => plan.profileName));
+
+  const toggleProfile = (profile: any) => {
+    const profileName = String(profile?.name || profile?.['.id'] || '').trim();
+    const isSelected = selectedProfileNames.has(profileName);
+
+    if (isSelected) {
+      setPlans(settings.plans.filter((plan) => plan.profileName !== profileName));
+      return;
+    }
+
+    setPlans([
+      ...settings.plans,
+      {
+        id: Math.random().toString(36).slice(2, 11),
+        profileName,
+        displayName: profileName,
+        priceLabel: '',
+        durationLabel: '',
+        speedLabel: String(profile?.['rate-limit'] || profile?.['shared-users'] || ''),
+        badge: 'none',
+        displayOrder: settings.plans.length + 1,
+      },
+    ]);
+  };
 
   useEffect(() => {
     try {
@@ -109,6 +138,66 @@ export const LivePreview = () => {
           <h2 className="text-lg font-bold text-slate-900">Aperçu en direct</h2>
           <p className="text-sm text-slate-500">Vue mobile dans le mockup et rendu desktop côte à côte.</p>
         </div>
+
+        <section className="mb-6 rounded-[1.5rem] border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Sparkles size={16} className="text-blue-600" />
+                Profils du routeur
+              </h3>
+              <p className="text-xs text-slate-500">Clique sur une carte pour l’ajouter ou le retirer de l’onglet Forfaits.</p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              <Signal size={12} className="text-blue-600" />
+              {routerProfiles.length} trouvés
+            </div>
+          </div>
+
+          {routerProfiles.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 pr-2 no-scrollbar snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {routerProfiles.map((profile: any) => {
+                const profileName = String(profile?.name || profile?.['.id'] || '').trim();
+                const isSelected = selectedProfileNames.has(profileName);
+
+                return (
+                  <button
+                    key={profile?.name || profile?.['.id']}
+                    onClick={() => toggleProfile(profile)}
+                    className={`min-w-[170px] snap-start rounded-[1.4rem] border p-4 text-left transition-all duration-200 ${
+                      isSelected
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isSelected ? 'bg-white/15' : 'bg-blue-50 text-blue-600'}`}>
+                        {isSelected ? <CheckCircle2 size={18} /> : <ShoppingBag size={16} />}
+                      </div>
+                      <div className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] ${isSelected ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {isSelected ? 'Ajouté' : 'Ajouter'}
+                      </div>
+                    </div>
+
+                    <p className={`mt-3 line-clamp-2 text-[11px] leading-relaxed ${isSelected ? 'text-blue-50' : 'text-slate-500'}`}>
+                      {profileName}
+                    </p>
+                    <div className={`mt-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
+                      <span>{profile?.['rate-limit'] || '2M/2M'}</span>
+                      <span className="inline-flex items-center gap-1">
+                        Forfaits <ChevronRight size={11} />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-[1.2rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+              Aucun profil détecté sur le routeur pour le moment.
+            </div>
+          )}
+        </section>
 
         <div className="grid gap-6 2xl:grid-cols-[430px,minmax(0,1fr)] xl:grid-cols-[400px,minmax(0,1fr)]">
           <section className="rounded-[2rem] border border-slate-200 bg-white/70 p-5 shadow-sm backdrop-blur">
