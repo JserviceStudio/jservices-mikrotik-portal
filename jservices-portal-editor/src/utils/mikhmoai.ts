@@ -59,14 +59,57 @@ export function cleanProfileName(name: any): string {
   return meta.cleanLabel;
 }
 
+const normalizeTimelimit = (value: any): string => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return '';
+  return raw
+    .replace(/\s+/g, '')
+    .replace(/jours?/g, 'd')
+    .replace(/jour(s)?/g, 'd')
+    .replace(/j$/, 'd')
+    .replace(/min$/, 'm');
+};
+
+const preserveHotspotTokens = (url: string) =>
+  url
+    .replace(new RegExp(encodeURIComponent('$(server-name)'), 'g'), '$(server-name)')
+    .replace(new RegExp(encodeURIComponent('$(mac)'), 'g'), '$(mac)')
+    .replace(new RegExp(encodeURIComponent('$(ip)'), 'g'), '$(ip)')
+    .replace(new RegExp(encodeURIComponent('$(link-status-esc)'), 'g'), '$(link-status-esc)');
+
 /**
  * 🎫 Générateur de lien de paiement intelligent TiketMOMO
  */
-export function buildTiketMomoPaymentUrl(plan: any, apiKey: string): string {
-  if (!apiKey || apiKey === 'none') return '';
-  const nasid = '$(server-name)'; 
-  const amount = String(plan.priceLabel || '0').replace(/\D/g, '');
-  const duration = plan.durationLabel || '';
-  const profile = plan.profileName;
-  return `https://tpay.jmoai.net/buy-ticketmomo?nasid=${nasid}&amount=${amount}&currency=cfa&profile_name=${encodeURIComponent(profile)}&timelimit=${encodeURIComponent(duration)}&mac=$(mac)&ip=$(ip)&pub_key=${apiKey}`;
+export function buildTiketMomoPaymentUrl(input: {
+  gatewayUrl?: string;
+  apiKey?: string;
+  profileName?: string;
+  priceLabel?: string;
+  durationLabel?: string;
+  amount?: string | number;
+  timelimit?: string;
+  nasid?: string;
+  mac?: string;
+  ip?: string;
+  linkStatus?: string;
+  storeSlug?: string;
+}): string {
+  const base = String(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo').trim();
+  const baseUrl = base.startsWith('http://') || base.startsWith('https://') ? base : `https://${base}`;
+  const url = new URL(baseUrl);
+  const amount = String(input.amount || input.priceLabel || '').replace(/\D/g, '');
+  const timelimit = normalizeTimelimit(input.timelimit || input.durationLabel || '');
+
+  url.searchParams.set('nasid', input.nasid || '$(server-name)');
+  if (amount) url.searchParams.set('amount', amount);
+  url.searchParams.set('currency', 'cfa');
+  if (input.profileName) url.searchParams.set('profile_name', input.profileName);
+  if (timelimit) url.searchParams.set('timelimit', timelimit);
+  url.searchParams.set('mac', input.mac || '$(mac)');
+  url.searchParams.set('ip', input.ip || '$(ip)');
+  url.searchParams.set('link-status', input.linkStatus || '$(link-status-esc)');
+  if (input.apiKey) url.searchParams.set('pub_key', input.apiKey);
+  if (input.storeSlug) url.searchParams.set('store', input.storeSlug);
+
+  return preserveHotspotTokens(url.toString());
 }
