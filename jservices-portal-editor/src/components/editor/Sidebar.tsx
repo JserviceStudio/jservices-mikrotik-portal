@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
@@ -8,7 +8,7 @@ import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '.
 import { fetchPortalBootstrap } from '../../utils/api';
 
 export const Sidebar = () => {
-  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updatePayment, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -139,6 +139,37 @@ export const Sidebar = () => {
                     <button key={l.v} onClick={() => updateBranding({ language: l.v as any })} className={`px-4 py-2 border rounded-xl text-xl ${settings.branding.language === l.v ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>{l.f}</button>
                   ))}
                 </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Réglages avancés</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <FeatureToggle checked={settings.features.enableQrScanner} icon={<QrCode size={16} />} label="Scanner QR Code" onChange={(v) => updateFeatures({ enableQrScanner: v })} />
+                    <FeatureToggle checked={settings.features.enableTrial} icon={<FlaskConical size={16} />} label="Bouton Essai Gratuit" onChange={(v) => updateFeatures({ enableTrial: v })} />
+                  </div>
+
+                  <div className="pt-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-black uppercase text-slate-800 flex items-center gap-2">
+                        <ShieldCheck size={18} className="text-blue-600" /> ARCEP KYC
+                      </h3>
+                      <input type="checkbox" checked={settings.features.kyc.enabled} onChange={(e) => updateKyc({ enabled: e.target.checked })} />
+                    </div>
+                    {settings.features.kyc.enabled && (
+                      <div className="space-y-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in zoom-in-95">
+                        <input type="text" value={settings.features.kyc.countryCode} onChange={(e) => updateKyc({ countryCode: e.target.value })} className="w-full p-2 border border-slate-100 rounded-lg text-xs" placeholder="Code pays (+229)" />
+                        <input type="number" value={settings.features.kyc.phoneLength} onChange={(e) => updateKyc({ phoneLength: parseInt(e.target.value) || 0 })} className="w-full p-2 border border-slate-100 rounded-lg text-xs" placeholder="Longueur tel" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Contact Support</h3>
+                  <div className="space-y-4">
+                    <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="WhatsApp" />
+                    <textarea value={settings.contact.address} onChange={(e) => updateContact({ address: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm min-h-[100px] resize-none" placeholder="Adresse" />
+                  </div>
+                </div>
              </section>
           </div>
         )}
@@ -245,3 +276,12 @@ export const Sidebar = () => {
     </div>
   );
 };
+
+const FeatureToggle = ({ checked, icon, label, onChange }: { checked: boolean; icon: JSX.Element; label: string; onChange: (v: boolean) => void }) => (
+  <label className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
+    <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
+    <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>
+    <span className="text-slate-500">{icon}</span>
+    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">{label}</span>
+  </label>
+);
