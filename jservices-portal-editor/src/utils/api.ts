@@ -1,112 +1,86 @@
 import { SettingsSchema } from '../store/useStore';
 
+/**
+ * 🛰️ MikhmoAI API Config (Production Mode)
+ * Force l'utilisation du domaine 'live.jmoai.net' pour l'API Backend.
+ */
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
-  // En production, si on est sur jmoai.net/portal-editor, l'API est à jmoai.net/
-  if (typeof window !== 'undefined') {
-    // Si on est dans le sous-dossier /portal-editor, on remonte à la racine pour l'API
-    return window.location.origin;
-  }
-  return '';
+  // En production, le backend Express est sur live.jmoai.net
+  return 'https://live.jmoai.net';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const EXTERNAL_AUTH_TOKEN_KEY = 'jservices.externalAuthToken';
 
-export interface PortalEditorOffer {
-  id: string;
-  profileName: string;
-  displayName: string;
-  priceAmount: number | null;
-  priceLabel: string;
-  durationCode: string | null;
-  durationLabel: string;
-  speedLabel: string;
-  sharedUsers: number | null;
-}
+const getSessionStorage = () => {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage;
+};
 
-export interface PortalEditorBootstrap {
-  router?: {
-    identity?: string | null;
-    cpu?: string | null;
-    uptime?: string | null;
-    version?: string | null;
-    board?: string | null;
-  };
-  editorConfig: SettingsSchema | null;
-  offers: PortalEditorOffer[];
-  profiles: Array<Record<string, unknown>>;
-  importedAt: string;
-}
-
-export interface PortalEditorSaveResponse {
-  settings: SettingsSchema;
-  store_settings: Record<string, unknown>;
-}
-
-const buildAuthHeaders = (): Record<string, string> => {
-  if (typeof window === 'undefined') return {};
-  
-  // 1. Priorité au token passé dans l'URL (cas de l'iframe cross-domain ou cookie-less)
+export const readPortalEditorToken = () => {
+  if (typeof window === 'undefined') return null;
   const urlParams = new URLSearchParams(window.location.search);
   const urlToken = urlParams.get('token');
-  
-  // 2. Fallback sur le localStorage
-  const externalAuthToken = urlToken || window.localStorage.getItem(EXTERNAL_AUTH_TOKEN_KEY);
-  
+  const storageToken = getSessionStorage()?.getItem(EXTERNAL_AUTH_TOKEN_KEY);
+  return urlToken || storageToken || null;
+};
+
+const buildAuthHeaders = (token?: string): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  const externalAuthToken = token || readPortalEditorToken();
   return externalAuthToken ? { Authorization: `Bearer ${externalAuthToken}` } : {};
 };
 
-export const fetchPortalBootstrap = async (force = false): Promise<PortalEditorBootstrap> => {
+const extractErrorMessage = (payload: any, fallback: string) => {
+  const candidate = payload?.error?.message ?? payload?.error ?? payload?.message ?? fallback;
+  if (typeof candidate === 'string') return candidate;
+  if (candidate && typeof candidate === 'object') {
+    return String(candidate.message || candidate.detail || candidate.code || fallback);
+  }
+  return fallback;
+};
+
+export const fetchPortalBootstrap = async (force = false, token?: string): Promise<any> => {
   const url = `${API_BASE_URL}/api/v1/clients/portal-editor/bootstrap${force ? '?force=true' : ''}`;
-  console.log('[API] 🛰️ Fetching bootstrap from:', url);
-  
+  console.log('[MikhmoAI] 🛰️ Loading Bootstrap:', url);
+
   const response = await fetch(url, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      ...buildAuthHeaders(),
-    },
+    headers: { Accept: 'application/json', ...buildAuthHeaders(token) },
   });
 
   const payload = await response.json();
   if (!response.ok || !payload?.success) {
-    console.error('[API] ❌ Bootstrap Error:', payload);
-    throw new Error(payload?.error || 'Impossible de charger les métadonnées MikroTik.');
+    throw new Error(extractErrorMessage(payload, 'Serveur MikroTik injoignable.'));
   }
 
-  return payload.data as PortalEditorBootstrap;
+  return payload.data;
 };
 
-export const savePortalConfig = async (settings: SettingsSchema): Promise<PortalEditorSaveResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/clients/portal-editor/config`, {
+export const savePortalConfig = async (settings: SettingsSchema, token?: string): Promise<any> => {
+  const url = `${API_BASE_URL}/api/v1/clients/portal-editor/config`;
+  const response = await fetch(url, {
     method: 'PUT',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...buildAuthHeaders(),
-    },
+    headers: { 'Content-Type': 'application/json', ...buildAuthHeaders(token) },
     body: JSON.stringify(settings),
   });
 
   const payload = await response.json();
   if (!response.ok || !payload?.success) {
-    throw new Error(payload?.error || 'Impossible d’enregistrer la configuration du portail.');
+    throw new Error(extractErrorMessage(payload, 'Sauvegarde échouée.'));
   }
 
-  return payload.data as PortalEditorSaveResponse;
+  return payload.data;
 };
 
-export const deployToCloud = async (settings: SettingsSchema) => {
+export const deployToCloud = async (settings: SettingsSchema, token?: string) => {
   try {
-    const result = await savePortalConfig(settings);
-    return {
-      success: true,
-      url: (result.settings.publicUrl || `${window.location.origin}/s/preview`) as string
-    };
-  } catch (error) {
-    console.error("Erreur de déploiement:", error);
-    return { success: false, url: '' };
+    const result = await savePortalConfig(settings, token);
+    return { success: true, url: result.settings?.publicUrl || `https://jmoai.net/s/preview` };
+  } catch (error: any) {
+    return { success: false, url: '', error: error.message };
   }
 };

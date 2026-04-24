@@ -1,84 +1,186 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sidebar } from './components/editor/Sidebar';
 import { LivePreview } from './components/preview/LivePreview';
-import { useStore } from './store/useStore';
-import { fetchPortalBootstrap } from './utils/api';
+import { useStore, type PlanConf, type SettingsSchema } from './store/useStore';
+import { fetchPortalBootstrap, readPortalEditorToken } from './utils/api';
+
+const safeText = (value: any, fallback = ''): string => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map((entry) => safeText(entry)).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    return safeText(
+      value.label ?? value.value ?? value.name ?? value.title ?? value.text ?? value.id ?? value.slug,
+      fallback
+    );
+  }
+  return fallback;
+};
+
+const normalizeProfile = (profile: any) => ({
+  ...profile,
+  name: safeText(profile?.name || profile?.['.id'] || 'Sans nom', 'Sans nom'),
+});
+
+const normalizePlan = (offer: any, index: number): PlanConf => ({
+  id: safeText(offer?.id || offer?.profileName || `offer-${index}`),
+  profileName: safeText(offer?.profileName),
+  displayName: safeText(offer?.displayName || offer?.profileName),
+  priceLabel: safeText(offer?.priceLabel || ''),
+  durationLabel: safeText(offer?.durationLabel || ''),
+  speedLabel: safeText(offer?.speedLabel || ''),
+  badge: 'none',
+  paymentUrl: '',
+  displayOrder: Number.isFinite(Number(offer?.displayOrder)) ? Number(offer.displayOrder) : index + 1,
+});
+
+const normalizeEditorConfig = (input: any): SettingsSchema | null => {
+  if (!input || typeof input !== 'object') return null;
+
+  const branding = input.branding && typeof input.branding === 'object' ? input.branding : {};
+  const payment = input.payment && typeof input.payment === 'object' ? input.payment : {};
+  const contact = input.contact && typeof input.contact === 'object' ? input.contact : {};
+  const features = input.features && typeof input.features === 'object' ? input.features : {};
+  const kyc = features.kyc && typeof features.kyc === 'object' ? features.kyc : {};
+
+  const aggregator = String(payment.aggregator || '').trim().toLowerCase();
+
+  return {
+    template_id: safeText(input.template_id || 'base-2') as SettingsSchema['template_id'],
+    branding: {
+      ispName: safeText(branding.ispName, 'WiFi Zone'),
+      wifiName: safeText(branding.wifiName, 'Mon Réseau Rapide'),
+      primaryColor: safeText(branding.primaryColor, '#673AB7'),
+      secondaryColor: safeText(branding.secondaryColor, '#512DA8'),
+      logoPreset: ['none', 'jservices', 'jconnect'].includes(String(branding.logoPreset || '').toLowerCase())
+        ? String(branding.logoPreset).toLowerCase() as SettingsSchema['branding']['logoPreset']
+        : 'jservices',
+      cardStyle: ['glass', 'ticket'].includes(String(branding.cardStyle || '').toLowerCase())
+        ? String(branding.cardStyle).toLowerCase() as SettingsSchema['branding']['cardStyle']
+        : 'glass',
+      bgOverlayOpacity: Number.isFinite(Number(branding.bgOverlayOpacity)) ? Number(branding.bgOverlayOpacity) : 80,
+      fontFamily: safeText(branding.fontFamily, 'Inter, sans-serif'),
+      language: ['fr', 'en'].includes(String(branding.language || '').toLowerCase())
+        ? String(branding.language).toLowerCase() as SettingsSchema['branding']['language']
+        : 'fr',
+    },
+    plans: Array.isArray(input.plans) ? input.plans.map((offer: any, index: number) => normalizePlan(offer, index)).filter((plan: PlanConf) => plan.profileName) : [],
+    payment: {
+      aggregator:
+        aggregator === 'fedapay' ? 'FedaPay' :
+        aggregator === 'moailtestore' ? 'MoailteStore' :
+        aggregator === 'cinay' ? 'Cinay' :
+        aggregator === 'custom' ? 'Custom' : 'none',
+      apiKey: safeText(payment.apiKey, ''),
+      clientId: safeText(payment.clientId, ''),
+      gatewayUrl: safeText(payment.gatewayUrl, ''),
+    },
+    features: {
+      themeMode: ['auto', 'light', 'dark'].includes(String(features.themeMode || '').toLowerCase())
+        ? String(features.themeMode).toLowerCase() as SettingsSchema['features']['themeMode']
+        : 'auto',
+      enableQrScanner: Boolean(features.enableQrScanner ?? features.qrScanner ?? true),
+      enableTrial: Boolean(features.enableTrial ?? features.trial ?? false),
+      kyc: {
+        enabled: Boolean(kyc.enabled),
+        countryCode: safeText(kyc.countryCode, '+229'),
+        authorizedPrefixes: Array.isArray(kyc.authorizedPrefixes) ? kyc.authorizedPrefixes.map((entry: any) => safeText(entry)).filter(Boolean) : [],
+        phoneLength: Number.isFinite(Number(kyc.phoneLength)) ? Number(kyc.phoneLength) : 10,
+        loggingUrl: safeText(kyc.loggingUrl, ''),
+      },
+    },
+    contact: {
+      phone: safeText(contact.phone, '+229 01 00 00 00 00'),
+      whatsapp: safeText(contact.whatsapp, '22996937864'),
+      address: safeText(contact.address, 'Whatsapp Uniquement'),
+      designerName: safeText(contact.designerName, 'J+services'),
+      designerPhone: safeText(contact.designerPhone, '+2290196937864'),
+      designerYear: safeText(contact.designerYear, '2026'),
+    },
+    deploymentStatus: ['idle', 'loading', 'success', 'error'].includes(String(input.deploymentStatus || '').toLowerCase())
+      ? String(input.deploymentStatus).toLowerCase() as SettingsSchema['deploymentStatus']
+      : 'idle',
+    publicUrl: safeText(input.publicUrl, '') || null,
+  };
+};
 
 function App() {
   const setPlans = useStore((state) => state.setPlans);
   const setSettings = useStore((state) => state.setSettings);
   const setMikrotikProfiles = useStore((state) => state.setMikrotikProfiles);
-  const settings = useStore((state) => state.settings);
-  
+
   const [bootstrapStatus, setBootstrapStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [bootstrapMessage, setBootstrapMessage] = useState('');
-  
-  const shouldBootstrapFromRouter =
-    settings.plans.length === 1 &&
-    settings.plans[0]?.profileName === '1H' &&
-    settings.plans[0]?.priceLabel === '100 FCFA';
+  const [sessionToken, setSessionToken] = useState<string | null>(readPortalEditorToken());
+  const lastBootstrapTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let isActive = true;
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== 'object') return;
 
-    const loadBootstrap = async () => {
-      setBootstrapStatus('loading');
-      setBootstrapMessage('Connexion au MikroTik...');
+      if ((event.data?.type === 'init_session' || event.data?.type === 'sync_session') && event.data?.token) {
+        const token = String(event.data.token);
+        window.sessionStorage.setItem('jservices.externalAuthToken', token);
+        setSessionToken(token);
+        return;
+      }
 
-      try {
-        const data = await fetchPortalBootstrap();
-        if (!isActive) return;
-
-        // 🛰️ Synchronisation de la liste globale (uniquement les strings)
-        if (data.profiles && Array.isArray(data.profiles)) {
-          const validProfiles = data.profiles
-            .filter(p => p && (p.name || p['.id']))
-            .map(p => ({ ...p, name: String(p.name || p['.id'] || 'Sans nom') }));
-          setMikrotikProfiles(validProfiles);
-        }
-
-        if (data.editorConfig) {
-          setSettings(data.editorConfig);
-          setBootstrapMessage('Configuration chargée.');
-        } else if (data.offers && data.offers.length > 0) {
-          setPlans(data.offers.map((offer, index) => ({
-            id: String(offer.id || index),
-            profileName: String(offer.profileName),
-            displayName: String(offer.displayName || offer.profileName),
-            priceLabel: String(offer.priceLabel || ''),
-            durationLabel: String(offer.durationLabel || ''),
-            speedLabel: String(offer.speedLabel || ''),
-            badge: 'none',
-            paymentUrl: '',
-            displayOrder: index + 1,
-          })));
-          setBootstrapMessage(`${data.offers.length} profils MikroTik importés.`);
-        } else {
-          setBootstrapMessage('Aucun profil exploitable trouvé.');
-        }
-
-        setBootstrapStatus('success');
-      } catch (error: any) {
-        if (!isActive) return;
-        setBootstrapStatus('error');
-        // On évite d'afficher [object Object]
-        const errMsg = typeof error === 'string' ? error : (error.message || 'Erreur de connexion MikroTik');
-        setBootstrapMessage(errMsg);
+      if (event.data?.type === 'clear_session' || event.data?.type === 'logout') {
+        window.sessionStorage.removeItem('jservices.externalAuthToken');
+        lastBootstrapTokenRef.current = null;
+        setSessionToken(null);
       }
     };
 
-    if (shouldBootstrapFromRouter || settings.plans.length === 0) {
-      loadBootstrap();
-    } else {
-        fetchPortalBootstrap().then(data => {
-            if (data.profiles) setMikrotikProfiles(data.profiles);
-        }).catch(() => {});
-    }
+    window.addEventListener('message', handleMessage);
+    window.parent.postMessage({ type: 'editor_ready' }, '*');
 
-    return () => {
-      isActive = false;
-    };
-  }, [setPlans, setSettings, setMikrotikProfiles, shouldBootstrapFromRouter, settings.plans.length]);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const loadBootstrap = async (token: string) => {
+    setBootstrapStatus('loading');
+    setBootstrapMessage('Connexion au MikroTik...');
+
+    try {
+      const data = await fetchPortalBootstrap(true, token);
+      const profiles = Array.isArray(data?.profiles) ? data.profiles.filter((p: any) => p && (p.name || p['.id'])).map(normalizeProfile) : [];
+      setMikrotikProfiles(profiles);
+
+      const normalizedSettings = normalizeEditorConfig(data?.editorConfig);
+      const offers = Array.isArray(data?.offers) ? data.offers : [];
+
+      if (normalizedSettings) {
+        setSettings(normalizedSettings);
+        if ((!normalizedSettings.plans || normalizedSettings.plans.length === 0) && offers.length > 0) {
+          setPlans(offers.map((offer: any, index: number) => normalizePlan(offer, index)));
+        }
+        setBootstrapMessage(offers.length > 0
+          ? `Configuration et ${offers.length} profils synchronisés.`
+          : 'Configuration chargée.');
+      } else if (offers.length > 0) {
+        setPlans(offers.map((offer: any, index: number) => normalizePlan(offer, index)));
+        setBootstrapMessage(`${offers.length} profils MikroTik importés.`);
+      } else {
+        setBootstrapMessage(profiles.length > 0 ? `${profiles.length} profils MikroTik détectés.` : 'Aucun profil trouvé.');
+      }
+
+      setBootstrapStatus('success');
+    } catch (error: any) {
+      setBootstrapStatus('error');
+      setBootstrapMessage(error?.message || 'Erreur de session');
+    }
+  };
+
+  useEffect(() => {
+    const token = sessionToken || readPortalEditorToken();
+    if (!token || lastBootstrapTokenRef.current === token) return;
+    lastBootstrapTokenRef.current = token;
+    void loadBootstrap(token);
+  }, [sessionToken]);
+
+  const storedToken = typeof window !== 'undefined' ? readPortalEditorToken() : null;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-slate-900">
@@ -90,11 +192,16 @@ function App() {
               ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
               : 'border-blue-200 bg-blue-50 text-blue-700'
         }`}>
-          <div className="flex items-center gap-2 font-bold">
+          <div className="flex items-center gap-2 font-bold text-[10px] uppercase tracking-wider">
             {bootstrapMessage}
           </div>
         </div>
       )}
+
+      <div className="absolute bottom-2 left-2 z-50 text-[8px] text-slate-300 font-mono">
+        API: live.jmoai.net | Session: {sessionToken || storedToken ? 'Active ✅' : 'Manquante ❌'}
+      </div>
+
       <Sidebar />
       <LivePreview />
     </div>

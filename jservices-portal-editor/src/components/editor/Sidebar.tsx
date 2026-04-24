@@ -8,8 +8,36 @@ import { ImageCropper } from './ImageCropper';
 import { parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
 import { fetchPortalBootstrap } from '../../utils/api';
 
+const safeText = (value: any, fallback = ''): string => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map((entry) => safeText(entry)).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    return safeText(value.label ?? value.value ?? value.name ?? value.title ?? value.text ?? value.id ?? value.slug, fallback);
+  }
+  return fallback;
+};
+
+const normalizeProfile = (profile: any) => ({
+  ...profile,
+  name: safeText(profile?.name || profile?.['.id'] || 'Sans nom', 'Sans nom'),
+});
+
+const normalizePlan = (offer: any, index: number) => ({
+  id: safeText(offer?.id || offer?.profileName || `offer-${index}`),
+  profileName: safeText(offer?.profileName),
+  displayName: safeText(offer?.displayName || offer?.profileName),
+  priceLabel: safeText(offer?.priceLabel || ''),
+  durationLabel: safeText(offer?.durationLabel || ''),
+  speedLabel: safeText(offer?.speedLabel || ''),
+  badge: 'none',
+  paymentUrl: '',
+  displayOrder: Number.isFinite(Number(offer?.displayOrder)) ? Number(offer.displayOrder) : index + 1,
+});
+
 export const Sidebar = () => {
-  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setSettings, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -18,7 +46,16 @@ export const Sidebar = () => {
     setIsRefreshing(true);
     try {
       const data = await fetchPortalBootstrap(true);
-      setMikrotikProfiles(data.profiles || []);
+      const profiles = Array.isArray(data?.profiles) ? data.profiles.filter((p: any) => p && (p.name || p['.id'])).map(normalizeProfile) : [];
+      setMikrotikProfiles(profiles);
+
+      if (data?.editorConfig) {
+        setSettings(data.editorConfig);
+      }
+
+      if (Array.isArray(data?.offers) && data.offers.length > 0) {
+        setPlans(data.offers.map((offer: any, index: number) => normalizePlan(offer, index)));
+      }
     } catch (err) {
       console.error('Erreur lors du rafraîchissement:', err);
       alert('Impossible de joindre le MikroTik pour le moment.');
@@ -31,7 +68,8 @@ export const Sidebar = () => {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'setMikrotikProfiles') {
-        setMikrotikProfiles(event.data.profiles || []);
+        const profiles = Array.isArray(event.data.profiles) ? event.data.profiles.map(normalizeProfile) : [];
+        setMikrotikProfiles(profiles);
       }
     };
     window.addEventListener('message', handleMessage);
