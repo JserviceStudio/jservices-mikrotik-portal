@@ -31,7 +31,7 @@ const normalizePlan = (offer: any, index: number): PlanConf => ({
   durationLabel: safeText(offer?.durationLabel || ''),
   speedLabel: safeText(offer?.speedLabel || ''),
   badge: 'none',
-  paymentUrl: '',
+  paymentUrl: safeText(offer?.paymentUrl || ''),
   displayOrder: Number.isFinite(Number(offer?.displayOrder)) ? Number(offer.displayOrder) : index + 1,
 });
 
@@ -75,6 +75,7 @@ const normalizeEditorConfig = (input: any): SettingsSchema | null => {
       apiKey: safeText(payment.apiKey, ''),
       clientId: safeText(payment.clientId, ''),
       gatewayUrl: safeText(payment.gatewayUrl, ''),
+      callbackUrl: safeText(payment.callbackUrl, ''),
     },
     features: {
       themeMode: ['auto', 'light', 'dark'].includes(String(features.themeMode || '').toLowerCase())
