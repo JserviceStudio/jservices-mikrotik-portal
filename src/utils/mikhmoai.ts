@@ -89,6 +89,7 @@ export function buildPaymentUrl(input: {
   profileName?: string;
   priceLabel?: string;
   durationLabel?: string;
+  dataLimit?: string;
   amount?: string | number;
   timelimit?: string;
   nasid?: string;
@@ -108,6 +109,7 @@ export function buildPaymentUrl(input: {
   baseParams.set('currency', 'cfa');
   if (input.profileName) baseParams.set('profile_name', input.profileName);
   if (timelimit) baseParams.set('timelimit', timelimit);
+  if (input.dataLimit) baseParams.set('data_limit', safeText(input.dataLimit));
   baseParams.set('mac', input.mac || '$(mac)');
   baseParams.set('ip', input.ip || '$(ip)');
   baseParams.set('link-status', input.linkStatus || '$(link-status-esc)');
@@ -148,5 +150,6 @@ export function buildTiketMomoPaymentUrl(plan: any, apiKey: string, gatewayUrl?:
     profileName: plan?.profileName || '',
     priceLabel: plan?.priceLabel || '',
     durationLabel: plan?.durationLabel || '',
+    dataLimit: plan?.dataLimit || '',
   });
 }
