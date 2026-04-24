@@ -83,6 +83,7 @@ const normalizeEditorConfig = (input: any): SettingsSchema | null => {
         : 'auto',
       enableQrScanner: Boolean(features.enableQrScanner ?? features.qrScanner ?? true),
       enableTrial: Boolean(features.enableTrial ?? features.trial ?? false),
+      enablePaymentLinks: Boolean(features.enablePaymentLinks ?? features.paymentLinks ?? false),
       kyc: {
         enabled: Boolean(kyc.enabled),
         countryCode: safeText(kyc.countryCode, '+229'),

@@ -47,6 +47,7 @@ export interface SettingsSchema {
     themeMode: 'auto' | 'light' | 'dark';
     enableQrScanner: boolean;
     enableTrial: boolean;
+    enablePaymentLinks: boolean;
     kyc: KycConf;
   };
   contact: {
@@ -112,6 +113,7 @@ const defaultSettings: SettingsSchema = {
     themeMode: 'auto',
     enableQrScanner: true,
     enableTrial: false,
+    enablePaymentLinks: false,
     kyc: {
       enabled: false,
       countryCode: '+229',

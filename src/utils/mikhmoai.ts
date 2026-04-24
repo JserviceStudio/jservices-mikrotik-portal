@@ -77,6 +77,82 @@ const preserveHotspotTokens = (url: string) =>
     .replace(new RegExp(encodeURIComponent('$(ip)'), 'g'), '$(ip)')
     .replace(new RegExp(encodeURIComponent('$(link-status-esc)'), 'g'), '$(link-status-esc)');
 
+const safeText = (value: any, fallback = ''): string => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return fallback;
+};
+
+const buildCustomGatewayUrl = (gatewayUrl: string, params: URLSearchParams) => {
+  const base = safeText(gatewayUrl, 'https://tpay.mikhmoai.com/buy-ticketmomo');
+  const normalized = base.startsWith('http://') || base.startsWith('https://') ? base : `https://${base}`;
+  const url = new URL(normalized);
+  params.forEach((value, key) => url.searchParams.set(key, value));
+  return url.toString();
+};
+
+export function buildPaymentUrl(input: {
+  aggregator?: string;
+  gatewayUrl?: string;
+  apiKey?: string;
+  profileName?: string;
+  priceLabel?: string;
+  durationLabel?: string;
+  amount?: string | number;
+  timelimit?: string;
+  nasid?: string;
+  mac?: string;
+  ip?: string;
+  linkStatus?: string;
+  storeSlug?: string;
+  description?: string;
+  reference?: string;
+}) {
+  const aggregator = String(input.aggregator || '').trim().toLowerCase();
+  const amount = String(input.amount || input.priceLabel || '').replace(/\D/g, '');
+  const timelimit = normalizeTimelimit(input.timelimit || input.durationLabel || '');
+  const baseParams = new URLSearchParams();
+  baseParams.set('nasid', input.nasid || '$(server-name)');
+  if (amount) baseParams.set('amount', amount);
+  baseParams.set('currency', 'cfa');
+  if (input.profileName) baseParams.set('profile_name', input.profileName);
+  if (timelimit) baseParams.set('timelimit', timelimit);
+  baseParams.set('mac', input.mac || '$(mac)');
+  baseParams.set('ip', input.ip || '$(ip)');
+  baseParams.set('link-status', input.linkStatus || '$(link-status-esc)');
+  if (input.storeSlug) baseParams.set('store', input.storeSlug);
+
+  let url: string;
+  if (aggregator === 'fedapay') {
+    const publicKey = safeText(input.apiKey);
+    const params = new URLSearchParams(baseParams);
+    if (publicKey) params.set('public_key', publicKey);
+    if (input.description) params.set('description', input.description);
+    params.set('currency', 'cfa');
+    url = `https://checkout.fedapay.com/pay?${params.toString()}`;
+  } else if (aggregator === 'kkiapay') {
+    const params = new URLSearchParams(baseParams);
+    if (input.apiKey) params.set('key', input.apiKey);
+    if (input.reference) params.set('reason', input.reference);
+    url = `https://payment.kkiapay.me/api/v1/checkout?${params.toString()}`;
+  } else if (aggregator === 'cinay' || aggregator === 'cinetpay' || aggregator === 'cinpay') {
+    const params = new URLSearchParams(baseParams);
+    if (input.apiKey) params.set('apikey', input.apiKey);
+    url = `https://checkout.cinay.me/p/${encodeURIComponent(input.apiKey || '')}?${params.toString()}`;
+  } else if (aggregator === 'custom') {
+    const customParams = new URLSearchParams(baseParams);
+    if (input.apiKey) customParams.set('pub_key', input.apiKey);
+    url = buildCustomGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo', customParams);
+  } else {
+    const customParams = new URLSearchParams(baseParams);
+    if (input.apiKey) customParams.set('pub_key', input.apiKey);
+    url = buildCustomGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo', customParams);
+  }
+
+  return preserveHotspotTokens(url);
+}
+
 /**
  * 🎫 Générateur de lien de paiement intelligent TiketMOMO
  */
@@ -93,23 +169,9 @@ export function buildTiketMomoPaymentUrl(input: {
   ip?: string;
   linkStatus?: string;
   storeSlug?: string;
+  aggregator?: string;
+  description?: string;
+  reference?: string;
 }): string {
-  const base = String(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo').trim();
-  const baseUrl = base.startsWith('http://') || base.startsWith('https://') ? base : `https://${base}`;
-  const url = new URL(baseUrl);
-  const amount = String(input.amount || input.priceLabel || '').replace(/\D/g, '');
-  const timelimit = normalizeTimelimit(input.timelimit || input.durationLabel || '');
-
-  url.searchParams.set('nasid', input.nasid || '$(server-name)');
-  if (amount) url.searchParams.set('amount', amount);
-  url.searchParams.set('currency', 'cfa');
-  if (input.profileName) url.searchParams.set('profile_name', input.profileName);
-  if (timelimit) url.searchParams.set('timelimit', timelimit);
-  url.searchParams.set('mac', input.mac || '$(mac)');
-  url.searchParams.set('ip', input.ip || '$(ip)');
-  url.searchParams.set('link-status', input.linkStatus || '$(link-status-esc)');
-  if (input.apiKey) url.searchParams.set('pub_key', input.apiKey);
-  if (input.storeSlug) url.searchParams.set('store', input.storeSlug);
-
-  return preserveHotspotTokens(url.toString());
+  return buildPaymentUrl(input);
 }
