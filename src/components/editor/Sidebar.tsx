@@ -1,15 +1,28 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
-import { deployToCloud } from '../../utils/api';
+import { deployToCloud, fetchPortalBootstrap } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
-import { parseProfileLabel, cleanProfileName, buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
+import { parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
 
 export const Sidebar = () => {
-  const { settings, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
+  const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [copyState, setCopyState] = useState<'idle' | 'hook' | 'gateway'>('idle');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleForceRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await fetchPortalBootstrap(true);
+      setMikrotikProfiles(data.profiles || []);
+    } catch (err) {
+      console.error('Erreur rafraîchissement:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const copyText = async (value: string, target: 'hook' | 'gateway') => {
     if (!value) return;
@@ -58,8 +71,41 @@ export const Sidebar = () => {
     }));
   };
 
-  const buildPreviewUrl = (plan: any) => {
-    return buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl);
+  const isHotspotToken = (value: any) => typeof value === 'string' && /^\$\([a-z0-9_-]+\)$/i.test(String(value).trim());
+  const encodeQueryValue = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const raw = String(value).trim();
+    if (!raw) return '';
+    return isHotspotToken(raw) ? raw : encodeURIComponent(raw);
+  };
+  const buildQueryString = (entries: Array<[string, any]>) =>
+    entries
+      .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeQueryValue(value)}`)
+      .join('&');
+  const appendQuery = (baseUrl: string, queryString: string) =>
+    `${baseUrl}${String(baseUrl).includes('?') ? '&' : '?'}${queryString}`;
+  const normalizeGatewayUrl = (gatewayUrl: string) => {
+    const raw = String(gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo').trim();
+    if (!raw) return 'https://tpay.mikhmoai.com/buy-ticketmomo';
+    return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+  };
+  const buildExactPreviewUrl = (plan: any) => {
+    const amount = String(plan?.priceLabel || '').replace(/\D/g, '');
+    const timelimit = String(plan?.durationLabel || '').trim().toLowerCase().replace(/\s+/g, '').replace(/jours?/g, 'd').replace(/jour(s)?/g, 'd').replace(/j$/, 'd').replace(/min$/, 'm');
+    const params = buildQueryString([
+      ['nasid', '$(server-name)'],
+      ['amount', amount],
+      ['currency', 'cfa'],
+      ['profile_name', plan?.profileName || ''],
+      ['timelimit', timelimit],
+      ['data_limit', plan?.dataLimit || ''],
+      ['mac', '$(mac)'],
+      ['ip', '$(ip)'],
+      ['link-status', '$(link-status-esc)'],
+      ['pub_key', settings.payment.apiKey || '']
+    ]);
+    return appendQuery(normalizeGatewayUrl(settings.payment.gatewayUrl || ''), params);
   };
 
   const togglePaymentLinks = (enabled: boolean) => {
@@ -70,8 +116,7 @@ export const Sidebar = () => {
     setDeploymentStatus('loading');
     try {
       const updatedPlans = settings.plans.map(plan => ({
-        ...plan,
-        paymentUrl: buildPreviewUrl(plan)
+        ...plan
       }));
       const result = await deployToCloud({ ...settings, plans: updatedPlans });
       if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
@@ -81,7 +126,7 @@ export const Sidebar = () => {
   return (
     <div className="w-[480px] min-w-[480px] h-screen bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden text-slate-900">
       <div className="bg-blue-600 text-white text-[9px] font-black py-1.5 px-4 text-center uppercase tracking-[0.3em] animate-pulse shrink-0">
-        🛰️ MikhmoAI Engine Active v2.9.6 (Final Clean)
+        🛰️ MikhmoAI Engine Active v2.9.7 (Commit-Aligned)
       </div>
 
       <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50/50">
@@ -197,6 +242,43 @@ export const Sidebar = () => {
                </button>
              </div>
 
+             {/* 🛰️ Carousel des Profils MikroTik (MikhmoAI UI/UX) */}
+             {mikrotikProfiles.length > 0 && (
+                <div className="mb-4 -mx-6 px-6">
+                   <div className="flex items-center justify-between mb-3 px-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
+                        <Signal size={14} strokeWidth={3} /> Vente Directe MikroTik
+                      </p>
+                      <button onClick={handleForceRefresh} disabled={isRefreshing} className="text-slate-400 hover:text-blue-600 transition-all">
+                        <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                      </button>
+                   </div>
+                   
+                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
+                     {mikrotikProfiles
+                      .map(p => ({ ...p, meta: parseProfileLabel(p.name) }))
+                      .filter(p => p.meta.isSaleable) // On cache les scripts ($user, etc)
+                      .map((p) => {
+                       const isSelected = settings.plans.some(plan => plan.profileName === p.name);
+                       return (
+                        <button key={p.name} onClick={() => {
+                             if (isSelected) { setPlans(settings.plans.filter(plan => plan.profileName !== p.name)); return; }
+                             const meta = p.meta;
+                             setPlans([...settings.plans, { id: Math.random().toString(36).slice(2, 11), profileName: p.name, displayName: `${meta.price} / ${meta.duration}`, priceLabel: meta.price, durationLabel: meta.duration, speedLabel: p['rate-limit'] || '2M/2M', badge: 'none', displayOrder: settings.plans.length + 1 }]);
+                          }}
+                          className={`flex-shrink-0 w-32 snap-start p-4 rounded-[1.8rem] border-2 transition-all relative overflow-hidden flex flex-col items-center text-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-slate-100 hover:border-blue-500/50'}`}>
+                          <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
+                             {isSelected ? <CheckCircle2 size={16} /> : <ShoppingBag size={14} />}
+                          </div>
+                          <p className={`text-[10px] font-black leading-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>{p.meta.price}</p>
+                          <p className={`text-[8px] font-bold mt-1 uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{p.meta.duration}</p>
+                        </button>
+                       );
+                     })}
+                   </div>
+                </div>
+             )}
+
              <div className="space-y-4">
                 {settings.plans.map((p, idx) => (
                   <div key={p.id} className="p-5 bg-white border border-slate-100 rounded-2xl relative group transition-all hover:shadow-md">
@@ -251,14 +333,14 @@ export const Sidebar = () => {
                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lien généré</p>
                            <button
                              type="button"
-                             onClick={() => copyText(buildPreviewUrl(p), 'gateway')}
+                             onClick={() => copyText(buildExactPreviewUrl(p), 'gateway')}
                              className="rounded-lg border border-slate-200 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:border-blue-500 hover:text-blue-600"
                            >
                              Copier
                            </button>
                          </div>
                          <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
-                           {buildPreviewUrl(p)}
+                           {buildExactPreviewUrl(p)}
                          </p>
                        </div>
                      ) : (
@@ -356,7 +438,7 @@ export const Sidebar = () => {
                       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Exemple généré</p>
                         <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
-                          {buildPreviewUrl({
+                          {buildExactPreviewUrl({
                             profileName: '150F-8H',
                             priceLabel: '150 FCFA',
                             durationLabel: '8H',
@@ -374,7 +456,7 @@ export const Sidebar = () => {
   );
 };
 
-const FeatureToggle = ({ checked, icon, label, onChange }: { checked: boolean; icon: JSX.Element; label: string; onChange: (v: boolean) => void }) => (
+const FeatureToggle = ({ checked, icon, label, onChange }: { checked: boolean; icon: any; label: string; onChange: (v: boolean) => void }) => (
   <label className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
     <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
     <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner relative"></div>

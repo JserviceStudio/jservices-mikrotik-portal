@@ -456,14 +456,14 @@ export const buildBase4LoginTemplate = () => `<!DOCTYPE html>
       <div class="m3-section-title"><%= i18n.plansTitle %></div>
       <div class="m3-plans-grid">
         <% plans.forEach(function(plan) { %>
-          <a href="<%= (features && features.enablePaymentLinks) ? (plan.paymentUrl || '#') : '#' %>" class="m3-plan-card">
+          <a href="<%= (features && features.enablePaymentLinks) ? (buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl) || '#') : '#' %>" class="m3-plan-card">
             <span class="m3-plan-name"><%= plan.displayName %></span>
             <span class="m3-plan-meta"><%= plan.durationLabel %></span>
             <div class="m3-plan-price"><%= plan.priceLabel %></div>
             <% if (plan.badge && plan.badge !== 'none') { %>
               <span class="m3-badge <%= plan.badge %>"><%= plan.badge %></span>
             <% } %>
-            <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || plan.paymentUrl)) { %>
+            <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl))) { %>
               <span class="m3-badge" style="background: var(--md-primary); color: var(--md-on-primary); margin-top: 8px;"><%= i18n.buyBadge %></span>
             <% } %>
           </a>
