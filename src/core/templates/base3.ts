@@ -344,11 +344,11 @@ export const buildBase3LoginTemplate = () => `<!DOCTYPE html>
     <% if (plans.length) { %>
       <h2 style="margin-top: 40px; margin-bottom: 20px; font-size: 1.25rem; font-weight: 800; text-align: center; color: var(--text-color);"><%= i18n.plansTitle %></h2>
       <% plans.forEach(function(plan) { %>
-        <a href="<%= (features && features.enablePaymentLinks) ? (buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl) || '#') : '#' %>" class="sky-plan-card">
+        <a href="<%= (features && features.enablePaymentLinks) ? (plan.paymentUrl || '#') : '#' %>" class="sky-plan-card">
           <div style="flex: 1;">
             <span class="sky-plan-name"><%= plan.displayName %></span>
             <span class="sky-plan-meta"><%= plan.durationLabel %> • <%= plan.speedLabel %></span>
-            <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl))) { %>
+            <% if (features && features.enablePaymentLinks && plan.paymentUrl) { %>
               <div style="background: rgba(255,255,255,0.2); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; margin-top: 6px; display: inline-block; border: 1px solid rgba(255,255,255,0.3);"><%= i18n.buyBadge %></div>
             <% } %>
           </div>

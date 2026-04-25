@@ -3,7 +3,6 @@ import ejs from 'ejs';
 import { CheckCircle2, ChevronRight, ShoppingBag, Signal, Sparkles } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { getTemplateDefinition, getTemplateTexts } from '../../core/templates';
-import { buildTiketMomoPaymentUrl } from '../../utils/mikhmoai';
 
 const MOCK_MIKROTIK_CONFIG = {
   loginUrl: 'https://demo.mikrotik.com/login',
@@ -103,7 +102,6 @@ export const LivePreview = () => {
       const template = getTemplateDefinition(settings.template_id);
       const rendered = ejs.render(template.files['login.html'], {
         ...settings,
-        buildTiketMomoPaymentUrl,
         mkConfig: MOCK_MIKROTIK_CONFIG,
         mkError: '',
         i18n: getTemplateTexts(settings.branding.language, {
