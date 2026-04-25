@@ -74,12 +74,27 @@ const safeText = (value: any, fallback = ''): string => {
   return fallback;
 };
 
-const buildCustomGatewayUrl = (gatewayUrl: string, params: URLSearchParams) => {
+const isHotspotToken = (value: any): boolean => typeof value === 'string' && /^\$\([a-z0-9_-]+\)$/i.test(value.trim());
+
+const encodeQueryValue = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  const raw = String(value).trim();
+  if (!raw) return '';
+  return isHotspotToken(raw) ? raw : encodeURIComponent(raw);
+};
+
+const buildQueryString = (entries: Array<[string, any]>) =>
+  entries
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeQueryValue(value)}`)
+    .join('&');
+
+const appendQuery = (baseUrl: string, queryString: string) =>
+  `${baseUrl}${String(baseUrl).includes('?') ? '&' : '?'}${queryString}`;
+
+const normalizeGatewayUrl = (gatewayUrl: string) => {
   const base = safeText(gatewayUrl, 'https://tpay.mikhmoai.com/buy-ticketmomo');
-  const normalized = base.startsWith('http://') || base.startsWith('https://') ? base : `https://${base}`;
-  const url = new URL(normalized);
-  params.forEach((value, key) => url.searchParams.set(key, value));
-  return url.toString();
+  return base.startsWith('http://') || base.startsWith('https://') ? base : `https://${base}`;
 };
 
 export function buildPaymentUrl(input: {
@@ -103,39 +118,48 @@ export function buildPaymentUrl(input: {
   const aggregator = String(input.aggregator || '').trim().toLowerCase();
   const amount = String(input.amount || input.priceLabel || '').replace(/\D/g, '');
   const timelimit = normalizeTimelimit(input.timelimit || input.durationLabel || '');
-  const baseParams = new URLSearchParams();
-  baseParams.set('nasid', input.nasid || '$(server-name)');
-  if (amount) baseParams.set('amount', amount);
-  baseParams.set('currency', 'cfa');
-  if (input.profileName) baseParams.set('profile_name', input.profileName);
-  if (timelimit) baseParams.set('timelimit', timelimit);
-  if (input.dataLimit) baseParams.set('data_limit', safeText(input.dataLimit));
-  baseParams.set('mac', input.mac || '$(mac)');
-  baseParams.set('ip', input.ip || '$(ip)');
-  baseParams.set('link-status', input.linkStatus || '$(link-status-esc)');
-  if (input.storeSlug) baseParams.set('store', input.storeSlug);
+  const baseParams: Array<[string, any]> = [
+    ['nasid', input.nasid || '$(server-name)'],
+    ['amount', amount],
+    ['currency', 'cfa'],
+    ['profile_name', input.profileName],
+    ['timelimit', timelimit],
+    ['data_limit', input.dataLimit],
+    ['mac', input.mac || '$(mac)'],
+    ['ip', input.ip || '$(ip)'],
+    ['link-status', input.linkStatus || '$(link-status-esc)'],
+    ['store', input.storeSlug],
+  ];
 
   let url: string;
   if (aggregator === 'fedapay') {
-    const params = new URLSearchParams(baseParams);
-    if (input.apiKey) params.set('public_key', input.apiKey);
-    params.set('description', input.description || `WiFi ${input.profileName || ''}`.trim());
-    url = `https://checkout.fedapay.com/pay?${params.toString()}`;
+    const params = buildQueryString([
+      ...baseParams,
+      ['public_key', input.apiKey],
+      ['description', input.description || `WiFi ${input.profileName || ''}`.trim()],
+    ]);
+    url = appendQuery('https://checkout.fedapay.com/pay', params);
   } else if (aggregator === 'kkiapay') {
-    const params = new URLSearchParams(baseParams);
-    if (input.apiKey) params.set('key', input.apiKey);
-    params.set('reason', input.reference || `WiFi ${input.profileName || ''}`.trim());
-    url = `https://payment.kkiapay.me/api/v1/checkout?${params.toString()}`;
+    const params = buildQueryString([
+      ...baseParams,
+      ['key', input.apiKey],
+      ['reason', input.reference || `WiFi ${input.profileName || ''}`.trim()],
+    ]);
+    url = appendQuery('https://payment.kkiapay.me/api/v1/checkout', params);
   } else if (aggregator === 'cinay' || aggregator === 'cinetpay' || aggregator === 'cinpay') {
-    const params = new URLSearchParams(baseParams);
-    if (input.apiKey) params.set('apikey', input.apiKey);
-    url = `https://checkout.cinay.me/p/${encodeURIComponent(input.apiKey || '')}?${params.toString()}`;
+    const params = buildQueryString([
+      ...baseParams,
+      ['apikey', input.apiKey],
+    ]);
+    url = appendQuery(`https://checkout.cinay.me/p/${encodeURIComponent(input.apiKey || '')}`, params);
   } else {
-    const customParams = new URLSearchParams(baseParams);
-    if (input.apiKey) customParams.set('pub_key', input.apiKey);
-    if (input.description) customParams.set('description', input.description);
-    if (input.reference) customParams.set('reference', input.reference);
-    url = buildCustomGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo', customParams);
+    const params = buildQueryString([
+      ...baseParams,
+      ['pub_key', input.apiKey],
+      ['description', input.description],
+      ['reference', input.reference],
+    ]);
+    url = appendQuery(normalizeGatewayUrl(input.gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo'), params);
   }
 
   return preserveHotspotTokens(url);

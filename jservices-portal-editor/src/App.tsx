@@ -32,7 +32,7 @@ const normalizePlan = (offer: any, index: number): PlanConf => ({
   dataLimit: safeText(offer?.dataLimit || offer?.data_limit || ''),
   speedLabel: safeText(offer?.speedLabel || ''),
   badge: 'none',
-  paymentUrl: safeText(offer?.paymentUrl || ''),
+  paymentUrl: '',
   displayOrder: Number.isFinite(Number(offer?.displayOrder)) ? Number(offer.displayOrder) : index + 1,
 });
 
