@@ -826,8 +826,8 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
         <% plans.forEach(function(plan, index) { %>
           <a
             class="ticket"
-            href="<%= (features && features.enablePaymentLinks) ? (plan.paymentUrl || '#') : '#' %>"
-            <%= (features && features.enablePaymentLinks && plan.paymentUrl) ? 'target="_blank" rel="noopener noreferrer"' : '' %>
+            href="<%= (features && features.enablePaymentLinks) ? (buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl) || '#') : '#' %>"
+            <%= (features && features.enablePaymentLinks && buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl)) ? 'target="_blank" rel="noopener noreferrer"' : '' %>
           >
             <div class="stub">
               <div class="top">
@@ -850,7 +850,7 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
                     <%= plan.badge === 'popular' ? i18n.bestSellerBadge : plan.badge === 'vip' ? i18n.vipBadge : i18n.ecoBadge %>
                   </div>
                 <% } %>
-                <% if (features && features.enablePaymentLinks && plan.paymentUrl) { %>
+                <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl))) { %>
                   <div class="direct-pay-badge"><%= i18n.buyBadge %></div>
                 <% } %>
               </div>

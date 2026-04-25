@@ -71,6 +71,43 @@ export const Sidebar = () => {
     }));
   };
 
+  const isHotspotToken = (value: any) => typeof value === 'string' && /^\$\([a-z0-9_-]+\)$/i.test(String(value).trim());
+  const encodeQueryValue = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const raw = String(value).trim();
+    if (!raw) return '';
+    return isHotspotToken(raw) ? raw : encodeURIComponent(raw);
+  };
+  const buildQueryString = (entries: Array<[string, any]>) =>
+    entries
+      .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeQueryValue(value)}`)
+      .join('&');
+  const appendQuery = (baseUrl: string, queryString: string) =>
+    `${baseUrl}${String(baseUrl).includes('?') ? '&' : '?'}${queryString}`;
+  const normalizeGatewayUrl = (gatewayUrl: string) => {
+    const raw = String(gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo').trim();
+    if (!raw) return 'https://tpay.mikhmoai.com/buy-ticketmomo';
+    return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+  };
+  const buildExactPreviewUrl = (plan: any) => {
+    const amount = String(plan?.priceLabel || '').replace(/\D/g, '');
+    const timelimit = String(plan?.durationLabel || '').trim().toLowerCase().replace(/\s+/g, '').replace(/jours?/g, 'd').replace(/jour(s)?/g, 'd').replace(/j$/, 'd').replace(/min$/, 'm');
+    const params = buildQueryString([
+      ['nasid', '$(server-name)'],
+      ['amount', amount],
+      ['currency', 'cfa'],
+      ['profile_name', plan?.profileName || ''],
+      ['timelimit', timelimit],
+      ['data_limit', plan?.dataLimit || ''],
+      ['mac', '$(mac)'],
+      ['ip', '$(ip)'],
+      ['link-status', '$(link-status-esc)'],
+      ['pub_key', settings.payment.apiKey || '']
+    ]);
+    return appendQuery(normalizeGatewayUrl(settings.payment.gatewayUrl || ''), params);
+  };
+
   const togglePaymentLinks = (enabled: boolean) => {
     updateFeatures({ enablePaymentLinks: enabled });
   };
@@ -291,8 +328,20 @@ export const Sidebar = () => {
                         />
                      </div>
                      {settings.features.enablePaymentLinks && settings.payment.apiKey ? (
-                       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">
-                         Le lien de paiement est généré par le portail au rendu.
+                       <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                         <div className="flex items-center justify-between gap-3 mb-2">
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lien généré</p>
+                           <button
+                             type="button"
+                             onClick={() => copyText(buildExactPreviewUrl(p), 'gateway')}
+                             className="rounded-lg border border-slate-200 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:border-blue-500 hover:text-blue-600"
+                           >
+                             Copier
+                           </button>
+                         </div>
+                         <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
+                           {buildExactPreviewUrl(p)}
+                         </p>
                        </div>
                      ) : (
                        <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">
@@ -387,6 +436,15 @@ export const Sidebar = () => {
                         placeholder="Clé API / public key"
                       />
                       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Exemple généré</p>
+                        <p className="break-all font-mono text-[10px] leading-relaxed text-slate-600">
+                          {buildExactPreviewUrl({
+                            profileName: '150F-8H',
+                            priceLabel: '150 FCFA',
+                            durationLabel: '8H',
+                            dataLimit: '1Go',
+                          }) || 'Le lien apparaîtra ici quand la clé publique est renseignée.'}
+                        </p>
                       </div>
                    </div>
                 </div>

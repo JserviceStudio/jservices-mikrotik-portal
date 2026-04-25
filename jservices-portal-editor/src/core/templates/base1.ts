@@ -495,7 +495,7 @@ export const buildBase1LoginTemplate = () => `<!DOCTYPE html>
       <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; padding: 0 4px; color: var(--text-main);"><%= i18n.plansTitle %></h2>
       <div class="plans-grid">
         <% plans.forEach(function(plan) { %>
-          <a href="<%= (features && features.enablePaymentLinks) ? (plan.paymentUrl || '#') : '#' %>" class="fin-plan">
+          <a href="<%= (features && features.enablePaymentLinks) ? (buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl) || '#') : '#' %>" class="fin-plan">
             <div class="plan-icon">📶</div>
             <div class="plan-info">
               <span class="plan-name"><%= plan.displayName %></span>
@@ -506,7 +506,7 @@ export const buildBase1LoginTemplate = () => `<!DOCTYPE html>
             </div>
             <div class="plan-price">
               <span class="amount"><%= plan.priceLabel %></span>
-              <% if (features && features.enablePaymentLinks && plan.paymentUrl) { %>
+              <% if (features && features.enablePaymentLinks && (payment.aggregator !== 'none' || buildTiketMomoPaymentUrl(plan, payment.apiKey, payment.gatewayUrl))) { %>
                 <div class="badge-buy" style="background: var(--primary); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 99px; text-transform: uppercase; margin-top: 6px; display: inline-block;"><%= i18n.buyBadge %></div>
               <% } %>
             </div>
