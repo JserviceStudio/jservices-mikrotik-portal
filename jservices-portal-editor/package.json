@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "verify:payment-links": "node ./scripts/verify-payment-link-format.mjs",
+    "publish:live": "bash ./scripts/publish-live.sh",
     "lint": "eslint .",
     "preview": "vite preview"
   },
