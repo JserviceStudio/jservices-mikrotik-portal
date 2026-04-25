@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver';
 import ejs from 'ejs';
 import { SettingsSchema } from '../store/useStore';
 import { getTemplateDefinition, getTemplateTexts } from '../core/templates';
+import { buildTiketMomoPaymentUrl } from './mikhmoai';
 
 const DEFAULT_MIKROTIK_VARS = {
   loginUrl: '$(link-login-only)',
@@ -23,6 +24,7 @@ export const exportTemplateZip = async (settings: SettingsSchema) => {
 
     const render = (template: string) => ejs.render(template, {
       ...settings,
+      buildTiketMomoPaymentUrl,
       mkConfig: DEFAULT_MIKROTIK_VARS,
       mkError: 'Aperçu d’erreur',
       logoSrc,
