@@ -51,6 +51,16 @@ npm run build
 
 Le build génère `dist/`, qui doit ensuite être synchronisé vers `/var/www/html/portal-editor`.
 
+## Vérification et publication
+
+```bash
+npm run verify:payment-links
+npm run publish:live
+```
+
+- `verify:payment-links` contrôle le bundle généré et bloque les macros encodées `%24%28...%29`
+- `publish:live` rebuild, vérifie, puis synchronise `dist/` vers le dossier servi en prod
+
 ## Déploiement
 
 Le site live est servi par Nginx sur:
@@ -63,9 +73,8 @@ Le chemin local de publication utilisé en prod:
 
 Après modification du code:
 
-1. reconstruire l’app
-2. synchroniser `dist/` vers `/var/www/html/portal-editor`
-3. rafraîchir l’éditeur dans le navigateur
+1. lancer `npm run publish:live`
+2. rafraîchir l’éditeur dans le navigateur
 
 ## Intégration backend
 
