@@ -4,7 +4,7 @@ import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronU
 import { exportTemplateZip } from '../../utils/exportZip';
 import { deployToCloud, fetchPortalBootstrap } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
-import { parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
+import { buildTiketMomoPaymentUrl, parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
@@ -71,41 +71,8 @@ export const Sidebar = () => {
     }));
   };
 
-  const isHotspotToken = (value: any) => typeof value === 'string' && /^\$\([a-z0-9_-]+\)$/i.test(String(value).trim());
-  const encodeQueryValue = (value: any) => {
-    if (value === null || value === undefined) return '';
-    const raw = String(value).trim();
-    if (!raw) return '';
-    return isHotspotToken(raw) ? raw : encodeURIComponent(raw);
-  };
-  const buildQueryString = (entries: Array<[string, any]>) =>
-    entries
-      .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeQueryValue(value)}`)
-      .join('&');
-  const appendQuery = (baseUrl: string, queryString: string) =>
-    `${baseUrl}${String(baseUrl).includes('?') ? '&' : '?'}${queryString}`;
-  const normalizeGatewayUrl = (gatewayUrl: string) => {
-    const raw = String(gatewayUrl || 'https://tpay.mikhmoai.com/buy-ticketmomo').trim();
-    if (!raw) return 'https://tpay.mikhmoai.com/buy-ticketmomo';
-    return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
-  };
   const buildExactPreviewUrl = (plan: any) => {
-    const amount = String(plan?.priceLabel || '').replace(/\D/g, '');
-    const timelimit = String(plan?.durationLabel || '').trim().toLowerCase().replace(/\s+/g, '').replace(/jours?/g, 'd').replace(/jour(s)?/g, 'd').replace(/j$/, 'd').replace(/min$/, 'm');
-    const params = buildQueryString([
-      ['nasid', '$(server-name)'],
-      ['amount', amount],
-      ['currency', 'cfa'],
-      ['profile_name', plan?.profileName || ''],
-      ['timelimit', timelimit],
-      ['data_limit', plan?.dataLimit || ''],
-      ['mac', '$(mac)'],
-      ['ip', '$(ip)'],
-      ['link-status', '$(link-status-esc)'],
-      ['pub_key', settings.payment.apiKey || '']
-    ]);
-    return appendQuery(normalizeGatewayUrl(settings.payment.gatewayUrl || ''), params);
+    return buildTiketMomoPaymentUrl(plan, settings.payment.apiKey, settings.payment.gatewayUrl);
   };
 
   const togglePaymentLinks = (enabled: boolean) => {
