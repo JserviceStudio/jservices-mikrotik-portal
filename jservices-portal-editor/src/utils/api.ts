@@ -76,6 +76,26 @@ export const savePortalConfig = async (settings: SettingsSchema, token?: string)
   return payload.data;
 };
 
+export const uploadPortalLogo = async (file: File, token?: string): Promise<{ url: string }> => {
+  const url = `${API_BASE_URL}/api/v1/clients/portal-editor/upload-logo`;
+  const formData = new FormData();
+  formData.append('logo', file);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { ...buildAuthHeaders(token) },
+    body: formData,
+  });
+
+  const payload = await response.json();
+  if (!response.ok || !payload?.success) {
+    throw new Error(extractErrorMessage(payload, 'Upload du logo échoué.'));
+  }
+
+  return payload.data;
+};
+
 export const fetchPortalDeploymentPlan = async (token?: string): Promise<any> => {
   const url = `${API_BASE_URL}/api/v1/clients/portal-editor/deployment-plan`;
   const response = await fetch(url, {

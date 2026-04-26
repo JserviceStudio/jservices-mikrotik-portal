@@ -1,16 +1,49 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useStore } from '../../store/useStore';
-import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Settings, Palette, Ticket, CreditCard, Download, Trash2, Plus, ChevronUp, ChevronDown, Sparkles, QrCode, FlaskConical, ShieldCheck, Signal, RefreshCw, CheckCircle2, ShoppingBag, Save, Upload } from 'lucide-react';
 import { exportTemplateZip } from '../../utils/exportZip';
-import { deployToCloud, fetchPortalBootstrap } from '../../utils/api';
+import { deployToCloud, fetchPortalBootstrap, uploadPortalLogo } from '../../utils/api';
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { buildTiketMomoPaymentUrl, parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
+import { ImageCropper } from './ImageCropper';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
   const [activeTab, setActiveTab] = useState('branding');
   const [copyState, setCopyState] = useState<'idle' | 'hook' | 'gateway'>('idle');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [pendingLogo, setPendingLogo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setPendingLogo(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = async (croppedBase64: string) => {
+    setPendingLogo(null);
+    setIsUploadingLogo(true);
+    try {
+      // Conversion base64 en File pour l'upload
+      const res = await fetch(croppedBase64);
+      const blob = await res.blob();
+      const file = new File([blob], 'logo.png', { type: 'image/png' });
+      
+      const { url } = await uploadPortalLogo(file);
+      updateBranding({ logoUrl: url, logoPreset: 'none' });
+      alert('Logo mis à jour !');
+    } catch (err) {
+      console.error(err);
+      alert('Erreur lors de l\'upload du logo.');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
 
   const handleForceRefresh = async () => {
     setIsRefreshing(true);
@@ -86,8 +119,19 @@ export const Sidebar = () => {
         ...plan
       }));
       const result = await deployToCloud({ ...settings, plans: updatedPlans });
-      if (result.success) { setPublicUrl(result.url); setDeploymentStatus('success'); } else { setDeploymentStatus('error'); }
-    } catch (err) { setDeploymentStatus('error'); }
+      if (result.success) { 
+        setPublicUrl(result.url); 
+        setDeploymentStatus('success'); 
+        alert('Configuration enregistrée avec succès !');
+        // Notifier le parent que la sauvegarde est terminée (si dans iframe)
+        if (window.parent !== window) {
+           window.parent.postMessage({ type: 'editor_saved', url: result.url }, '*');
+        }
+      } else { 
+        setDeploymentStatus('error'); 
+        alert('Erreur lors de la sauvegarde: ' + result.error);
+      }
+    } catch (err) { setDeploymentStatus('error'); alert('Erreur inattendue.'); }
   };
 
   return (
@@ -101,9 +145,10 @@ export const Sidebar = () => {
           <Settings className="text-blue-600" /> Éditeur Portail
         </h1>
         <div className="flex gap-2">
-            <button onClick={() => exportTemplateZip(settings)} className="p-2 text-slate-400 hover:text-blue-600"><Download size={18}/></button>
-            <button onClick={handleSaveCloud} disabled={settings.deploymentStatus === 'loading'} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg disabled:opacity-50">
-                {settings.deploymentStatus === 'loading' ? 'Envoi...' : 'Déployer'}
+            <button onClick={() => exportTemplateZip(settings)} className="p-2 text-slate-400 hover:text-blue-600" title="Télécharger le code HTML/ZIP"><Download size={18}/></button>
+            <button onClick={handleSaveCloud} disabled={settings.deploymentStatus === 'loading'} className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg disabled:opacity-50 flex items-center gap-1.5">
+                <Save size={14} />
+                {settings.deploymentStatus === 'loading' ? 'Envoi...' : 'Sauvegarder'}
             </button>
         </div>
       </div>
@@ -123,10 +168,76 @@ export const Sidebar = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar pb-32 bg-slate-50/30">
+        {pendingLogo && (
+          <ImageCropper image={pendingLogo} onCropComplete={handleCropComplete} onCancel={() => setPendingLogo(null)} />
+        )}
+
         {activeTab === 'branding' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
              <section className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-2">Identité Visuelle</h3>
+                
+                {/* 🖼️ Gestion du Logo */}
+                <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                   <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logo de la Boutique</label>
+                      <button onClick={() => updateBranding({ logoUrl: '', logoPreset: 'jservices' })} className="text-[9px] font-bold text-blue-600 hover:underline">Réinitialiser</button>
+                   </div>
+                   
+                   <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                         {settings.branding.logoUrl ? (
+                            <img src={settings.branding.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                         ) : (
+                            <img src={settings.branding.logoPreset === 'jservices' ? 'https://jmoai.net/assets/logo-jservices.png' : 'https://jmoai.net/assets/logo-jconnect.png'} alt="Preset" className="w-full h-full object-contain opacity-50" />
+                         )}
+                      </div>
+                      
+                      <div className="flex-1 space-y-2">
+                         <button 
+                           onClick={() => fileInputRef.current?.click()}
+                           disabled={isUploadingLogo}
+                           className="w-full py-2.5 px-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2">
+                            {isUploadingLogo ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
+                            {isUploadingLogo ? 'Envoi...' : 'Upload personnalisé'}
+                         </button>
+                         <input type="file" ref={fileInputRef} onChange={handleLogoSelect} accept="image/*" className="hidden" />
+                         
+                         <div className="flex gap-2">
+                            <button onClick={() => updateBranding({ logoPreset: 'jservices', logoUrl: '' })} 
+                              className={`flex-1 py-1 text-[8px] font-bold border rounded-lg transition-all ${settings.branding.logoPreset === 'jservices' && !settings.branding.logoUrl ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}>J+SERVICES</button>
+                            <button onClick={() => updateBranding({ logoPreset: 'jconnect', logoUrl: '' })} 
+                              className={`flex-1 py-1 text-[8px] font-bold border rounded-lg transition-all ${settings.branding.logoPreset === 'jconnect' && !settings.branding.logoUrl ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}>J+CONNECT</button>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Style de Carte</label>
+                      <div className="flex p-1 bg-slate-100 rounded-xl">
+                         <button onClick={() => updateBranding({ cardStyle: 'glass' })} className={`flex-1 py-1.5 text-[9px] font-bold rounded-lg transition-all ${settings.branding.cardStyle === 'glass' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>GLASS</button>
+                         <button onClick={() => updateBranding({ cardStyle: 'ticket' })} className={`flex-1 py-1.5 text-[9px] font-bold rounded-lg transition-all ${settings.branding.cardStyle === 'ticket' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>TICKET</button>
+                      </div>
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Mode Thème</label>
+                      <div className="flex p-1 bg-slate-100 rounded-xl">
+                         <button onClick={() => updateFeatures({ themeMode: 'light' })} className={`flex-1 py-1.5 text-[9px] font-bold rounded-lg transition-all ${settings.features.themeMode === 'light' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>CLAIR</button>
+                         <button onClick={() => updateFeatures({ themeMode: 'dark' })} className={`flex-1 py-1.5 text-[9px] font-bold rounded-lg transition-all ${settings.features.themeMode === 'dark' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>SOMBRE</button>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-black text-slate-400 uppercase">Opacité du Fond</label>
+                      <span className="text-[10px] font-bold text-blue-600">{settings.branding.bgOverlayOpacity}%</span>
+                   </div>
+                   <input type="range" min="0" max="100" value={settings.branding.bgOverlayOpacity} onChange={(e) => updateBranding({ bgOverlayOpacity: parseInt(e.target.value) })} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                </div>
+
                 <div>
                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Template de Base</label>
                    <div className="grid grid-cols-2 gap-3">
