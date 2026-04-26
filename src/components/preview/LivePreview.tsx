@@ -101,18 +101,33 @@ export const LivePreview = () => {
   useEffect(() => {
     try {
       const template = getTemplateDefinition(settings.template_id);
-      const rendered = ejs.render(template.files['login.html'], {
+      const i18n = getTemplateTexts(settings.branding.language, {
+        wifiName: settings.branding.wifiName,
+        ispName: settings.branding.ispName,
+        plansSectionTitle: settings.payment.aggregator !== 'none' 
+          ? (settings.branding.language === 'en' ? '📦 Buy WiFi Plans' : '📦 Achetez Forfaits WiFi')
+          : (settings.branding.language === 'en' ? '📦 Our WiFi Plans' : '📦 Nos Forfaits WiFi'),
+      });
+
+      // Simulation des variables pour l'aperçu
+      const previewVars = {
         ...settings,
+        features: {
+          ...settings.features,
+          enablePaymentLinks: settings.features.enablePaymentLinks || false,
+        },
+        contact: {
+          ...settings.contact,
+          momoRecoveryUrl: '#', // Lien inactif en aperçu
+        },
+        i18n: {
+          ...i18n,
+          recoveryButton: settings.branding.language === 'en' ? 'Lost Ticket?' : 'Récupérez 🎟️',
+          buyBadge: settings.branding.language === 'en' ? 'BUY' : 'ACHETER'
+        },
         buildTiketMomoPaymentUrl,
         mkConfig: MOCK_MIKROTIK_CONFIG,
         mkError: '',
-        i18n: getTemplateTexts(settings.branding.language, {
-          wifiName: settings.branding.wifiName,
-          ispName: settings.branding.ispName,
-          plansSectionTitle: settings.payment.aggregator !== 'none' 
-            ? (settings.branding.language === 'en' ? '📦 Buy WiFi Plans' : '📦 Achetez Forfaits WiFi')
-            : (settings.branding.language === 'en' ? '📦 Our WiFi Plans' : '📦 Nos Forfaits WiFi'),
-        }),
         logoSrc:
           settings.branding.logoUrl ||
           (settings.branding.logoPreset === 'jservices'
@@ -120,7 +135,9 @@ export const LivePreview = () => {
             : settings.branding.logoPreset === 'jconnect'
               ? '/portal-editor/assets/presets/jconnect.png'
               : ''),
-      });
+      };
+
+      const rendered = ejs.render(template.files['login.html'], previewVars);
       const sanitized = sanitizeMikroTikPreview(rendered);
       setHtmlContent({
         mobile: buildPreviewDocument(sanitized, 'mobile'),

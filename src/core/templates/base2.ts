@@ -600,6 +600,7 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
       background: var(--secondary);
       transform: scale(1.1);
     }
+    .recovery-link { display: inline-block; margin-top: 15px; padding: 10px 20px; background: rgba(0,0,0,0.03); color: var(--text-muted); border-radius: 14px; text-decoration: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border: 1px dashed var(--border-color); transition: all 0.3s; } .recovery-link:hover { background: var(--primary); color: white; border-style: solid; }
     .signature {
       margin-top: 20px;
       text-align: center;
@@ -819,6 +820,15 @@ export const buildBase2LoginTemplate = () => `<!DOCTYPE html>
       </div>
       <button class="btn btn-blue" type="submit"><%= i18n.connectButton %></button>
     </form>
+
+    
+    <% if (features && features.enablePaymentLinks) { %>
+      <div style="text-align: center; margin-top: 10px;">
+        <a href="<%= contact.momoRecoveryUrl %>" target="_blank" class="recovery-link">
+          Récupérez 🎟️
+        </a>
+      </div>
+    <% } %>
 
     <% if (plans.length) { %>
       <section class="dashboard">

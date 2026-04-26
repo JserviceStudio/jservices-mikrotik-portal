@@ -182,6 +182,7 @@ export const buildBase1LoginTemplate = () => `<!DOCTYPE html>
     .submit-btn:active {
       transform: translateY(0);
     }
+    .recovery-link { display: block; margin-top: 16px; padding: 12px; text-align: center; color: var(--primary); font-size: 0.85rem; font-weight: 700; text-decoration: none; border: 1px solid var(--border-color); border-radius: 12px; transition: all 0.2s; } .recovery-link:hover { background: var(--bg-page); }
     .error-msg {
       background: var(--error-bg, #fef2f2);
       color: var(--error-text, #dc2626);
@@ -490,6 +491,13 @@ export const buildBase1LoginTemplate = () => `<!DOCTYPE html>
         </form>
       </div>
     </div>
+
+    
+      <% if (features && features.enablePaymentLinks) { %>
+        <a href="<%= contact.momoRecoveryUrl %>" target="_blank" class="recovery-link">
+          Récupérez 🎟️
+        </a>
+      <% } %>
 
     <% if (plans.length) { %>
       <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; padding: 0 4px; color: var(--text-main);"><%= i18n.plansTitle %></h2>
