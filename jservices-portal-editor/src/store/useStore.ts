@@ -58,6 +58,7 @@ export interface SettingsSchema {
     designerName?: string;
     designerPhone?: string;
     designerYear?: string;
+    momoRecoveryUrl?: string;
   };
   deploymentStatus: 'idle' | 'loading' | 'success' | 'error';
   publicUrl: string | null;
@@ -130,7 +131,8 @@ const defaultSettings: SettingsSchema = {
     address: 'Whatsapp Uniquement',
     designerName: 'J+services',
     designerPhone: '+2290196937864',
-    designerYear: '2026'
+    designerYear: '2026',
+    momoRecoveryUrl: 'https://reco.jmoai.net'
   },
   deploymentStatus: 'idle',
   publicUrl: null

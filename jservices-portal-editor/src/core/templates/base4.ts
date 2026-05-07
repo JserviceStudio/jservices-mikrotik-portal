@@ -74,6 +74,7 @@ export const buildBase4LoginTemplate = () => `<!DOCTYPE html>
       align-items: center;
       min-height: 100vh;
     }
+    .recovery-link { display: block; margin-top: 16px; padding: 14px; color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; text-align: center; border: 1px solid var(--md-outline); border-radius: 100px; transition: background 0.2s; } .recovery-link:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
     .m3-container {
       width: 100%;
       max-width: 480px;
@@ -451,6 +452,13 @@ export const buildBase4LoginTemplate = () => `<!DOCTYPE html>
         <button type="submit" class="m3-button"><%= i18n.connectButton %></button>
       </form>
     </div>
+
+    
+        <% if (features && features.enablePaymentLinks) { %>
+          <a href="<%= contact.momoRecoveryUrl %>" target="_blank" class="recovery-link">
+            Récupérez 🎟️
+          </a>
+        <% } %>
 
     <% if (plans.length) { %>
       <div class="m3-section-title"><%= i18n.plansTitle %></div>

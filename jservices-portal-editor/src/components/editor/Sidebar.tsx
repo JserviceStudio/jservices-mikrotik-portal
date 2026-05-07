@@ -292,13 +292,30 @@ export const Sidebar = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="space-y-4">
                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Contact Support</h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
+                    <input type="text" value={settings.contact.phone} onChange={(e) => updateContact({ phone: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="Téléphone" />
                     <input type="text" value={settings.contact.whatsapp} onChange={(e) => updateContact({ whatsapp: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm" placeholder="WhatsApp" />
                     <textarea value={settings.contact.address} onChange={(e) => updateContact({ address: e.target.value })} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm min-h-[100px] resize-none" placeholder="Adresse" />
+
+                    <div className="pt-4 border-t space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Récupération de Tickets</label>
+                       <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-3">
+                          <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
+                            Lien système configuré automatiquement pour permettre à vos clients de retrouver leurs tickets perdus.
+                          </p>
+                          <input 
+                            type="url" 
+                            value="https://reco.jmoai.net" 
+                            readOnly
+                            className="w-full p-3 bg-slate-100/50 border border-blue-200 rounded-xl text-xs font-mono outline-none text-slate-500 cursor-not-allowed" 
+                          />
+                       </div>
+                    </div>
                   </div>
                 </div>
+
              </section>
           </div>
         )}
