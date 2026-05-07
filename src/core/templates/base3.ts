@@ -81,6 +81,7 @@ export const buildBase3LoginTemplate = () => `<!DOCTYPE html>
       padding: 32px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
     }
+    .recovery-link { display: block; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); color: var(--text-color); border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; text-align: center; border: 1px solid var(--glass-border); transition: all 0.3s; } .recovery-link:hover { background: rgba(255,255,255,0.2); }
     .sky-header {
       text-align: center;
       margin-bottom: 32px;
@@ -340,6 +341,13 @@ export const buildBase3LoginTemplate = () => `<!DOCTYPE html>
         <button type="submit" class="sky-btn"><%= i18n.connectButton %></button>
       </form>
     </div>
+
+    
+      <% if (features && features.enablePaymentLinks) { %>
+        <a href="<%= contact.momoRecoveryUrl %>" target="_blank" class="recovery-link">
+          Récupérez 🎟️
+        </a>
+      <% } %>
 
     <% if (plans.length) { %>
       <h2 style="margin-top: 40px; margin-bottom: 20px; font-size: 1.25rem; font-weight: 800; text-align: center; color: var(--text-color);"><%= i18n.plansTitle %></h2>
