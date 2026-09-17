@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { Shield } from 'lucide-react';
+import { AdminVpnAssistancePanel } from './components/admin/AdminVpnAssistancePanel';
 import { Sidebar } from './components/editor/Sidebar';
 import { LivePreview } from './components/preview/LivePreview';
 import { useStore, type PlanConf, type SettingsSchema } from './store/useStore';
-import { fetchPortalBootstrap, readPortalEditorToken } from './utils/api';
+import { checkAdminSession, fetchPortalBootstrap, readPortalEditorToken } from './utils/api';
 
 const safeText = (value: any, fallback = ''): string => {
   if (value === null || value === undefined) return fallback;
@@ -130,6 +132,8 @@ function App() {
   const [bootstrapStatus, setBootstrapStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [bootstrapMessage, setBootstrapMessage] = useState('');
   const [sessionToken, setSessionToken] = useState<string | null>(readPortalEditorToken());
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+  const [adminModeAvailable, setAdminModeAvailable] = useState(false);
   const lastBootstrapTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -192,6 +196,7 @@ function App() {
 
   useEffect(() => {
     const token = sessionToken || readPortalEditorToken();
+    void checkAdminSession(token || undefined).then(setAdminModeAvailable);
     if (!token || lastBootstrapTokenRef.current === token) return;
     lastBootstrapTokenRef.current = token;
     void loadBootstrap(token);
@@ -218,6 +223,22 @@ function App() {
       <div className="absolute bottom-2 left-2 z-50 text-[8px] text-slate-300 font-mono">
         API: live.jmoai.net | Session: {sessionToken || storedToken ? 'Active ✅' : 'Manquante ❌'}
       </div>
+
+      {adminModeAvailable && (
+        <button
+          type="button"
+          onClick={() => setAdminPanelOpen(true)}
+          className="absolute bottom-4 right-4 z-30 inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-700 shadow-lg hover:bg-slate-50"
+          title="Mode admin VPN"
+        >
+          <Shield size={15} />
+          Admin VPN
+        </button>
+      )}
+
+      {adminModeAvailable && adminPanelOpen && (
+        <AdminVpnAssistancePanel token={sessionToken || storedToken} onClose={() => setAdminPanelOpen(false)} />
+      )}
 
       <Sidebar />
       <LivePreview />
