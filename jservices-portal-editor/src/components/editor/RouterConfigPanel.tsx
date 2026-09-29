@@ -91,13 +91,31 @@ export const RouterConfigPanel = () => {
           dns_name: formData.dns_name,
           walled_garden_present: formData.walled_garden_present
         },
-        profiles: formData.profiles
+        // Contrat du schéma : `data_limit` (pas `datalimit`, qui passerait sans erreur mais serait
+        // ignoré) et prix numérique ou null — une chaîne vide est refusée par la validation.
+        profiles: formData.profiles.map((p: any) => ({
+          name: String(p.name || '').trim(),
+          price: p.price === '' || p.price === null || p.price === undefined ? null : Number(p.price),
+          timelimit: p.timelimit || null,
+          data_limit: p.datalimit || null,
+          validity: p.validity || null,
+          voucher_format: p.voucher_format,
+          commercial: p.commercial !== false,
+        }))
       };
       
       const res = await declareNas(payload, readPortalEditorToken() || undefined);
-      const resStatus = res.data?.status || 'Déclaré';
-      const reasons = res.data?.reasons ? ` (${res.data.reasons.join(', ')})` : '';
-      setDeclarationResult({ type: 'success', data: { status: resStatus + reasons } });
+      // Le backend répond 200 même quand il REFUSE (contrat déclaration NAS) : le statut tranche.
+      const statut = res.data?.status;
+      if (statut === 'REFUSED') {
+        setDeclarationResult({ type: 'error', message: `${res.data?.message || 'Déclaration refusée.'}${res.data?.code ? ` (${res.data.code})` : ''}` });
+      } else {
+        const nbChangements = Array.isArray(res.data?.changes) ? res.data.changes.length : 0;
+        const libelle = statut === 'RECONCILED'
+          ? `Déclaration enregistrée : ${nbChangements} correction(s) appliquée(s).`
+          : statut === 'ALIGNED' ? 'Déclaration enregistrée : tout est déjà conforme.' : 'Déclaration enregistrée.';
+        setDeclarationResult({ type: 'success', data: { status: libelle } });
+      }
     } catch (e: any) {
       setDeclarationResult({ type: 'error', message: e.message || 'Erreur' });
     } finally {
@@ -308,8 +326,8 @@ export const RouterConfigPanel = () => {
              <div className={`p-3 mt-3 rounded-xl text-xs font-bold flex gap-2 ${declarationResult.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                 {declarationResult.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                 {declarationResult.type === 'success' ? 
-                  `Succès: ${declarationResult.data?.status}` : 
-                  `Erreur: ${declarationResult.message}`}
+                  declarationResult.data?.status :
+                  `Refusé : ${declarationResult.message}`}
              </div>
            )}
         </div>
