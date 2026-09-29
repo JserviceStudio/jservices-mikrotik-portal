@@ -45,3 +45,48 @@
 ## Questions ouvertes / À décider
 - Si le format `router_state` côté serveur évolue, le store `useStore` de l'éditeur devra être tenu à jour pour refléter d'autres états potentiels (ex: mode proxy).
 - Le backend web expose `origin: "EDITEUR_WEB"` mais faudra-t-il aussi un champ de signature cryptographique dans la déclaration NAS si elle provient du frontend sans relais HTTPS de confiance ?
+
+## R1 - Corrections suite à la relecture de la PR
+**1. BLOQUANT — champs inventés (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Suppression des valeurs de repli inventées (`store_slug: 'unknown'`). Le formulaire utilise directement `rawBootstrapData.store_slug`, et exploite maintenant les objets `rawBootstrapData.router_facts` et `rawBootstrapData.nas_facts` injectés par le backend, selon le contrat exigé. Les profils utilisent en priorité `nas_facts.profiles` (derniers profils déclarés).
+
+**2. BLOQUANT — store_slug manquant (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Si `store_slug` est absent, le bouton de déclaration est désactivé et le message "Boutique introuvable, rechargez l'éditeur." est affiché au vendeur.
+
+**3. Liens de paiement absents (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Ajout du lien de paiement (calculé via `buildTiketMomoPaymentUrl`) sous chaque profil avec un bouton "Copier lien".
+
+**4. Formulaire des profils incomplet (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Ajout des champs prix, validité et limite de données (datalimit). L'affichage sur mobile (360px) se fait sous forme de carte par profil avec champs empilés en grille (flex-col et grid-cols-2).
+
+**5. Validation client (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Ajout d'une validation réactive sur les champs avec surbrillance rouge et messages d'erreur sous les champs. Le bouton "Envoyer la déclaration NAS" se désactive si la validation échoue (nom vide, prix < 0, format non vc/up, absence de NAS + Hotspot).
+
+**6. Mutation d'état React (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Remplacement des mutations d'état directes par des copies conformes (`newP[idx] = { ...newP[idx], field: value }`).
+
+**7. Libellés (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Traduction complète de la source (ROUTER_LIVE -> Lecture directe, etc.) et des raisons (TIKETMOMO_NOT_ELIGIBLE -> Non éligible, etc.).
+
+**8. Mode en ligne (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Ajout du bouton "Actualiser" lorsque `isOnline` est vrai, déclenchant un `fetchPortalBootstrap(true, token)` forcé et la mise à jour immédiate du store (zustand).
+
+**9. Réponse de la déclaration (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Affiche le vrai statut renvoyé (`res.data?.status`) complété par les raisons (`res.data?.reasons`) en cas de succès partiel ou refus.
+
+**10. Copier (Corrigé)**
+* Fichier: `src/components/editor/RouterConfigPanel.tsx`
+* Résultat: Refonte de la fonction `copyToClipboard` en async/await pour utiliser l'API Clipboard complète, et afficher "Copié" ou un message d'erreur pendant 2 secondes.
+
+**Commandes lancées:** 
+- Récriture complète du composant `RouterConfigPanel.tsx`.
+- `npm run build` et `npm run lint` validés.
