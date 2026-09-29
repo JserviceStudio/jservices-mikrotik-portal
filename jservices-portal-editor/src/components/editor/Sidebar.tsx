@@ -6,6 +6,7 @@ import { deployToCloud, fetchPortalBootstrap, uploadPortalLogo } from '../../uti
 import { TEMPLATE_DEFINITIONS } from '../../core/templates';
 import { buildTiketMomoPaymentUrl, parseProfileLabel, cleanProfileName } from '../../utils/mikhmoai';
 import { ImageCropper } from './ImageCropper';
+import { RouterConfigPanel } from './RouterConfigPanel';
 
 export const Sidebar = () => {
   const { settings, mikrotikProfiles, setMikrotikProfiles, setTemplateId, updateBranding, updateFeatures, updateKyc, updatePayment, updateContact, setPlans, setDeploymentStatus, setPublicUrl } = useStore();
@@ -158,6 +159,7 @@ export const Sidebar = () => {
           { id: 'branding', icon: <Palette size={16} />, label: 'Design' },
           { id: 'plans', icon: <Ticket size={16} />, label: 'Forfaits' },
           { id: 'payment', icon: <CreditCard size={16} />, label: 'Paiement' },
+          { id: 'routeur', icon: <Signal size={16} />, label: 'Routeur' },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600 bg-blue-50/20' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
@@ -543,9 +545,10 @@ export const Sidebar = () => {
                       </div>
                    </div>
                 </div>
-             </section>
-          </div>
-        )}
+              </section>
+           </div>
+         )}
+         {activeTab === 'routeur' && <RouterConfigPanel />}
       </div>
     </div>
   );

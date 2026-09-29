@@ -169,6 +169,14 @@ function App() {
       const profiles = Array.isArray(data?.profiles) ? data.profiles.filter((p: any) => p && (p.name || p['.id'])).map(normalizeProfile) : [];
       setMikrotikProfiles(profiles);
 
+      useStore.getState().setRawBootstrapData(data);
+
+      if (data?.router_state) {
+        useStore.getState().setRouterState(data.router_state);
+      } else {
+        useStore.getState().setRouterState({ mode: 'UNKNOWN', source: 'UNKNOWN' });
+      }
+
       const normalizedSettings = normalizeEditorConfig(data?.editorConfig);
       const offers = Array.isArray(data?.offers) ? data.offers : [];
 

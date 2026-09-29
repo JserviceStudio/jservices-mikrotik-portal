@@ -238,3 +238,35 @@ export const deployToCloud = async (settings: SettingsSchema, token?: string) =>
     return { success: false, url: '', error: error.message };
   }
 };
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const declareNas = async (payload: any, token?: string): Promise<any> => {
+  const url = `${API_BASE_URL}/api/v1/clients/tiketmomo/nas-declaration`;
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...buildAuthHeaders(token) },
+    body: JSON.stringify({ ...payload, origin: 'EDITEUR_WEB' }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data?.success) {
+    throw new Error(extractErrorMessage(data, 'Erreur lors de la déclaration NAS.'));
+  }
+  return data;
+};
+
+export const fetchWalledGardenScript = async (token?: string): Promise<any> => {
+  const url = `${API_BASE_URL}/api/v1/clients/tiketmomo/walled-garden-script`;
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json', ...buildAuthHeaders(token) },
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data?.success) {
+    throw new Error(extractErrorMessage(data, 'Impossible de récupérer le walled garden.'));
+  }
+  return data;
+};

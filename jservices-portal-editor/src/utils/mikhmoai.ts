@@ -124,7 +124,7 @@ export function buildPaymentUrl(input: {
     ['currency', 'cfa'],
     ['profile_name', input.profileName],
     ['timelimit', timelimit],
-    ['data_limit', input.dataLimit],
+    ['datalimit', input.dataLimit],
     ['mac', input.mac || '$(mac)'],
     ['ip', input.ip || '$(ip)'],
     ['link-status', input.linkStatus || '$(link-status-esc)'],
