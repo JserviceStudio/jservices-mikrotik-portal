@@ -76,6 +76,18 @@ interface EditorState {
   updateContact: (contact: Partial<SettingsSchema['contact']>) => void;
   setPlans: (plans: PlanConf[]) => void;
   setMikrotikProfiles: (profiles: any[]) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rawBootstrapData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setRawBootstrapData: (data: any) => void;
+  routerState: {
+    mode: 'ONLINE' | 'OFFLINE_CACHED' | 'MANUAL_REQUIRED' | 'NO_ROUTER' | 'UNKNOWN';
+    source: 'ROUTER_LIVE' | 'DATABASE_CACHE' | 'NAS_DECLARATION' | 'NONE' | 'UNKNOWN';
+    read_at: string | null;
+    allocation_id: string | null;
+    reason: string | null;
+  };
+  setRouterState: (state: any) => void;
   setDeploymentStatus: (status: 'idle' | 'loading' | 'success' | 'error') => void;
   setPublicUrl: (url: string | null) => void;
 }
@@ -141,6 +153,14 @@ const defaultSettings: SettingsSchema = {
 export const useStore = create<EditorState>((set) => ({
   settings: defaultSettings,
   mikrotikProfiles: [],
+  rawBootstrapData: null,
+  routerState: {
+    mode: 'UNKNOWN',
+    source: 'UNKNOWN',
+    read_at: null,
+    allocation_id: null,
+    reason: null
+  },
   setSettings: (settings) => set({ settings }),
   setTemplateId: (templateId) => set((state) => ({ settings: { ...state.settings, template_id: templateId } })),
   updateBranding: (branding) =>
@@ -153,6 +173,10 @@ export const useStore = create<EditorState>((set) => ({
   updateContact: (contact) => set((state) => ({ settings: { ...state.settings, contact: { ...state.settings.contact, ...contact } } })),
   setPlans: (plans) => set((state) => ({ settings: { ...state.settings, plans } })),
   setMikrotikProfiles: (profiles) => set({ mikrotikProfiles: profiles }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setRawBootstrapData: (data) => set({ rawBootstrapData: data }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setRouterState: (stateUpdate) => set((state) => ({ routerState: { ...state.routerState, ...stateUpdate } })),
   setDeploymentStatus: (status) => set((state) => ({ settings: { ...state.settings, deploymentStatus: status } })),
   setPublicUrl: (url) => set((state) => ({ settings: { ...state.settings, publicUrl: url } })),
 }));
